@@ -1,79 +1,106 @@
+"""
+Test automatrisé (a revoir !!!!!)
+"""
 
 from tensorflow.keras.applications.resnet50 import ResNet50
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.applications.resnet50 import preprocess_input
+# from textblob import TextBlob
 import numpy as np
-
+import os
 import cv2
+import torch
+
 
 from PIL import Image
-
-import pytesseract # https://github.com/madmaze/pytesseract?tab=readme-ov-file
+import pytesseract  # https://github.com/madmaze/pytesseract
 from gtts import gTTS
 import pygame
-import pyttsx3
+from correction import main
 
-# If you don't have tesseract executable in your PATH, include the following:
-#pytesseract.pytesseract.tesseract_cmd = r'<full_path_to_your_tesseract_executable>'
-# Example tesseract_cmd = r'C:\Program Files (x86)\Tesseract-OCR\tesseract'
+torch.cuda.empty_cache()
 
-# Simple image to string
-
-
-# In order to bypass the image conversions of pytesseract, just use relative or absolute image path
-# NOTE: In this case you should provide tesseract supported images or tesseract will return error
-#print(pytesseract.image_to_string('test.png'))
+# # Path configuration
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 
+correction = input("Voulez-vous corriger les images? (oui/non) : ")
+
+while True :
+    if correction == "oui":
+        main()
+        raw_dir = "../test/processed"
+        break
+    elif correction == "non":
+        raw_dir = "../test/images"  # Images de test
+        break
+    else :
+        correction = input("Voulez-vous corriger les images? (oui/non) : ")
 
 
+
+# Directories for raw images and results
+results_dir = "../test/results/" # Resultats .txt et .mp3 des tests
+
+# Ensure results directory exists
+if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
+
+# Load the ResNet50 model
 model = ResNet50(weights='imagenet')
 
-font                   = cv2.FONT_HERSHEY_SIMPLEX
-bottomLeftCornerOfText = (10,500)
-fontScale              = 1
-fontColor              = (255,255,255)
-lineType               = 2
+def process_images():
+    """
+    Process all images in the raw directory, perform OCR, and save results in the results directory.
+    """
+    for file_name in os.listdir(raw_dir):
+        file_path = os.path.join(raw_dir, file_name)
 
-cap = cv2.VideoCapture(0)
+        # Check if it's an image file
+        if not (file_name.endswith('.jpg') or file_name.endswith('.png') or file_name.endswith('.jpeg')):
+            print(f"Skipping non-image file: {file_name}")
+            continue
 
-def go():
-        while True:
-                while True:
-                        # Read from webcam
-                        ret, frame = cap.read()
-                        #print(pytesseract.image_to_string(frame))
-                        
-                        # Crop
-                        frame = frame[:min(frame.shape[0:2]),:min(frame.shape[0:2])]
-                        
-                        # format image
-                        img = cv2.resize(frame,(224,224))
-                        resnetimg = image.img_to_array(img)
-                        resnetimg = np.expand_dims(resnetimg, axis=0)
-                        resnetimg = preprocess_input(resnetimg)
-                        
-                        # Write text on image
-                        #cv2.putText(img,decode_predictions(preds, top=1)[0][0][1],(10,30), font, 
-                        #fontScale,
-                        #fontColor,
-                        #lineType)
-                        
-                        # Show the image
-                        cv2.imshow("frame",img)
-                        
-                        if cv2.waitKey(1) & 0xFF == ord('q'):
-                                # NN prediction
-                                preds = model.predict(resnetimg)
-                                text = pytesseract.image_to_string(frame,lang="fra")
-                                print(text)
-                                myobj = gTTS(text=text.replace("\n"," "), lang="fr", slow=False)
-                                myobj.save("welcome.mp3")
-                                pygame.mixer.init()
-                                pygame.mixer.music.load("welcome.mp3")
-                                pygame.mixer.music.play()
-                                break
+        print(f"Processing: {file_name}")
 
+        # Read the image
+        image = cv2.imread(file_path)
+        if image is None:
+            print(f"Error reading image: {file_name}")
+            continue
 
-go()
+        # Resize for ResNet50 input
+        img_resized = cv2.resize(image, (224, 224))
+        resnet_img = img_to_array(img_resized)
+        resnet_img = np.expand_dims(resnet_img, axis=0)
+        resnet_img = preprocess_input(resnet_img)
 
+        # OCR to extract text
+        extracted_text = pytesseract.image_to_string(image, lang="eng").strip()
+        # extracted_text  = str( TextBlob(extracted_text).correct())
+        # NN prediction (optional)
+        # preds = model.predict(resnet_img)
+
+        # Save extracted text to results directory
+        result_file_path = os.path.join(results_dir, f"{os.path.splitext(file_name)[0]}_result.txt")
+        with open(result_file_path, "w", encoding="utf-8") as f:
+            f.write(extracted_text)
+
+        print(f"Result saved to: {result_file_path}")
+
+        # si le text est = null, on ne genere pas d audio 
+        if extracted_text:
+            generate_audio(extracted_text, file_name)
+
+def generate_audio(text, file_name):
+    """
+    Generate an audio file for the extracted text.
+    """
+    audio_path = os.path.join(results_dir, f"{os.path.splitext(file_name)[0]}.mp3")
+    myobj = gTTS(text=text, lang="en", slow=False)
+    myobj.save(audio_path)
+    print(f"Audio saved to: {audio_path}")
+
+# Main entry point
+if __name__ == "__main__":
+    process_images()
