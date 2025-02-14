@@ -1,3 +1,7 @@
+# Guide :
+Se placer dans src puis `python3 image_vision.py` 
+
+
 # 26/01/2025
 
 Prochain RDV le 6/02 à 16h.  
