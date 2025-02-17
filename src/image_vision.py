@@ -76,7 +76,7 @@ def process_images():
         resnet_img = preprocess_input(resnet_img)
 
         # OCR to extract text
-        extracted_text = pytesseract.image_to_string(image, lang="eng").strip()
+        extracted_text = pytesseract.image_to_string(image, lang="fra").strip()
         # extracted_text  = str( TextBlob(extracted_text).correct())
         # NN prediction (optional)
         # preds = model.predict(resnet_img)
@@ -97,7 +97,7 @@ def generate_audio(text, file_name):
     Generate an audio file for the extracted text.
     """
     audio_path = os.path.join(results_dir, f"{os.path.splitext(file_name)[0]}.mp3")
-    myobj = gTTS(text=text, lang="en", slow=False)
+    myobj = gTTS(text=text, lang="fr", slow=False)
     myobj.save(audio_path)
     print(f"Audio saved to: {audio_path}")
 
