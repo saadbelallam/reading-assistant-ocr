@@ -5,7 +5,7 @@ Test automatrisé (a revoir !!!!!)
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications.resnet50 import preprocess_input
-# from textblob import TextBlob
+from nlp_correction.py import correct_ocr_text
 import numpy as np
 import os
 import cv2
@@ -80,6 +80,9 @@ def process_images():
         # extracted_text  = str( TextBlob(extracted_text).correct())
         # NN prediction (optional)
         # preds = model.predict(resnet_img)
+
+        # NLP Correction
+        extracted_text = correct_ocr_text(extracted_text)
 
         # Save extracted text to results directory
         result_file_path = os.path.join(results_dir, f"{os.path.splitext(file_name)[0]}_result.txt")
