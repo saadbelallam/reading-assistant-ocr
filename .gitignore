@@ -1,0 +1,14 @@
+# Ignore tests folder completely
+tests/**
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.env
+
+# OS specific files
+.DS_Store
