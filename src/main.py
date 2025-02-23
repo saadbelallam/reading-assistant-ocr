@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import sys
 import time
 import shutil
-
-import pytesseract
-import cv2
 
 from pipeline.geometric_correction import scan_document
 from pipeline.blocks_detection import detect_text_blocks_rlsa

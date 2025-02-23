@@ -5,6 +5,11 @@
 RESULT_DIR = tests/results
 IMAGE_DIR = tests/images
 
+# Install all dependencies
+install:
+	@echo "\n📦 Installing dependencies from requirements.txt..."
+	@pip install -r requirements.txt
+
 # Process a single image (pass 'image=<path>' and optional 'time=true')
 process-image:
 	@echo "\n🚀 Processing image: $(image)"
@@ -44,6 +49,7 @@ clean:
 # Help target
 help:
 	@echo "\nUsage:"
+	@echo "  make install                                 Install all dependencies from requirements.txt"
 	@echo "  make process-image image=<path> [time=true]  Process a single image"
 	@echo "  make process-all [time=true]                 Process all images in $(IMAGE_DIR)"
 	@echo "  make evaluate image=<path>                   Evaluate OCR output of a single image"
@@ -51,4 +57,4 @@ help:
 	@echo "  make clean                                   Remove all generated results in $(RESULT_DIR)"
 	@echo "  make help                                    Show this help message"
 
-.PHONY: process-image process-all evaluate clean help
+.PHONY: install process-image process-all evaluate clean help
