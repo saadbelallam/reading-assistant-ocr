@@ -1,6 +1,6 @@
 # -------------------------------
 # Pipeline Execution Targets
-# -------------------------------k
+# -------------------------------
 # Base directories
 RESULT_DIR = tests/results
 IMAGE_DIR = tests/images

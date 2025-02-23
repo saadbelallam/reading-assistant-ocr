@@ -11,6 +11,7 @@ import cv2
 from pipeline.geometric_correction import scan_document
 from pipeline.blocks_detection import detect_text_blocks_rlsa
 from pipeline.blocks_ordering import order_blocks
+from pipeline.lines_detection import detect_lines
 from pipeline.ocr import extract_text
 from pipeline.nlp import correct_text
 from pipeline.audio_generation import generate
@@ -54,17 +55,10 @@ def main():
     start_time = time.time()
 
     # 1. Geometric correction could go here if needed.
-    start_geo = time.time()
-    image_path = scan_document(image_path, result_path)
-    timing_report["Geometric Correction"] = time.time() - start_geo
-    
-    # image = cv2.imread(image_path)
-    # if image is None:
-    #     raise FileNotFoundError(f"Image not found at path: {image_path}")
-    # 
-    # print(pytesseract.image_to_string(image).strip())
-    # return
-    
+    # start_geo = time.time()
+    # image_path = scan_document(image_path, result_path)
+    # timing_report["Geometric Correction"] = time.time() - start_geo
+        
     # 2. Block detection – store intermediate results in result_path
     start_block_detect = time.time()
     blocks = detect_text_blocks_rlsa(image_path, result_path)
@@ -72,18 +66,17 @@ def main():
 
     # 3. Blocks ordering – also store ordering visualization in result_path
     start_block_order = time.time()
-    ordered_blocks, vis_image = order_blocks(image_path, blocks, result_path)
+    ordered_blocks, _ = order_blocks(image_path, blocks, result_path)
     timing_report["Block Ordering"] = time.time() - start_block_order
+    
+    # 4. Lines detection using Craft
+    start_lines_detect = time.time()
+    lines = detect_lines(image_path, result_path, ordered_blocks)
+    timing_report["Lines Detection"] = time.time() - start_lines_detect
 
-    # 4. Words detection using Craft
-    # start_word_detect = time.time()
-    # words = detect_words() NOT YET IMPLEMENTED
-    # timing_report["Word Detection"] = time.time() - start_word_detect
-
-
-    # 5. OCR processing – extract text using ordered blocks
+    # 5. OCR processing – extract text using ordered lines
     start_ocr = time.time()
-    text = extract_text(image_path, ordered_blocks, result_path)
+    text = extract_text(image_path, result_path, lines)
     timing_report["OCR Processing"] = time.time() - start_ocr
     
     # Implemented but so slowww
