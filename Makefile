@@ -5,6 +5,7 @@
 RESULT_DIR = tests/results
 IMAGE_DIR = tests/images
 
+export PYTHONPATH := $(PYTHONPATH):$(CURDIR)
 # Install all dependencies
 install:
 	@echo "\n📦 Installing dependencies from requirements.txt..."

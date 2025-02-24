@@ -42,7 +42,7 @@ def main():
         dest_txt = os.path.join(result_path, "expected.txt")
         shutil.copy(corresponding_txt, dest_txt)
     else:
-        print("No corresponding text file found for input image !!!!!!!!!")
+        print("===============> No corresponding text file found for input image")
     
     # Initialize timing report dictionary
     timing_report = {}
@@ -51,9 +51,9 @@ def main():
     start_time = time.time()
 
     # 1. Geometric correction could go here if needed.
-    # start_geo = time.time()
-    # image_path = scan_document(image_path, result_path)
-    # timing_report["Geometric Correction"] = time.time() - start_geo
+    start_geo = time.time()
+    image_path = scan_document(image_path, result_path)
+    timing_report["Geometric Correction"] = time.time() - start_geo
         
     # 2. Block detection – store intermediate results in result_path
     start_block_detect = time.time()
