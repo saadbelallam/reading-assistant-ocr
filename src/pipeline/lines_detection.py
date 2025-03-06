@@ -14,51 +14,51 @@ from models.craft_text_detector import (
 import numpy as np
 
 def detect_lines(image_path, output_dir, ordered_blocks):
-    """
-    Detect text lines in each ordered block using the CRAFT text detector.
-
-    Parameters:
-        image_path (str): Path to the input image.
-        output_dir (str): Directory where exported results will be saved.
-        ordered_blocks (List[Tuple[int, int, int, int]]): Ordered list of blocks (x, y, w, h).
-
-    Returns:
-        list: Ordered list of detected lines (boxes) in reading order.
-    """
-    print("Running lines detection ...")
+    print("Running lines detection on full image ...")
     image = read_image(image_path)
     craft_net = load_craftnet_model(cuda=False)
     refine_net = load_refinenet_model(cuda=False)
-    all_boxes = []
 
-    # Process each block in the given order
-    for idx, (x, y, w, h) in enumerate(ordered_blocks):
-        # Crop the block region from the image
-        block_image = image[y:y+h, x:x+w]
+    # Detect lines in the FULL IMAGE
+    import time
+    s = time.time()
+    prediction_result = get_prediction(
+        image=image,
+        craft_net=craft_net,
+        refine_net=refine_net,
+        text_threshold=0.7,
+        link_threshold=0.4,
+        low_text=0.4,
+        cuda=False,
+        long_size=1280,
+    )
+    all_boxes = prediction_result["boxes"]
+    print(time.time() - s)
+    
+    # Group lines by their corresponding blocks
+    block_lines = [[] for _ in ordered_blocks]
 
-        # Detect lines within the block
-        prediction_result = get_prediction(
-            image=block_image,
-            craft_net=craft_net,
-            refine_net=refine_net,
-            text_threshold=0.7,
-            link_threshold=0.4,
-            low_text=0.4,
-            cuda=False,
-            long_size=1280
-        )
+    for box in all_boxes:
+        # Calculate the center of the detected line
+        center_x = np.mean(box[:, 0])
+        center_y = np.mean(box[:, 1])
 
-        # Adjust coordinates to the original image
-        block_boxes = prediction_result["boxes"]
-        adjusted_boxes = [box + np.array([x, y]) for box in block_boxes]
+        # Assign line to the first matching block (assuming non-overlapping blocks)
+        for i, (x, y, w, h) in enumerate(ordered_blocks):
+            if x <= center_x <= x + w and y <= center_y <= y + h:
+                block_lines[i].append(box)
+                break
 
-        # Sort lines within the block by their y-coordinate (top to bottom)
-        adjusted_boxes.sort(key=lambda b: np.min(b[:, 1]))
-        all_boxes.extend(adjusted_boxes)
+    # Sort lines within each block by y-coordinate (top to bottom)
+    sorted_lines = []
+    for i, block in enumerate(ordered_blocks):
+        lines_in_block = block_lines[i]
+        lines_in_block.sort(key=lambda b: np.min(b[:, 1]))  # Sort by topmost y-coordinate
+        sorted_lines.extend(lines_in_block)
 
-    # Export all detected lines in reading order
-    export_detected_regions(image=image, regions=all_boxes, rectify=True)
-    export_extra_results(image=image, regions=all_boxes, output_path=output_dir)
+    # Export all lines in reading order
+    export_detected_regions(image=image, regions=sorted_lines, rectify=True)
+    export_extra_results(image=image, regions=sorted_lines, output_path=output_dir)
     empty_cuda_cache()
 
-    return all_boxes
+    return sorted_lines
