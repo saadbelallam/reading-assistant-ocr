@@ -74,12 +74,11 @@ def main():
     start_ocr = time.time()
     text = extract_text(image_path, result_path, lines)
     timing_report["OCR Processing"] = time.time() - start_ocr
-    
-    # Implemented but so slowww
+
     # 6. NLP text correction – correct the OCR text
-    # start_nlp = time.time()
-    # text = correct_text(text)
-    # timing_report["NLP Correction"] = time.time() - start_nlp
+    start_nlp = time.time()
+    text = correct_text(text, result_path)
+    timing_report["NLP Correction"] = time.time() - start_nlp
 
     # 7. Audio generation
     # start_audio = time.time()
