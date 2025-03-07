@@ -14,14 +14,12 @@ from models.craft_text_detector import (
 import numpy as np
 
 def detect_lines(image_path, output_dir, ordered_blocks):
-    print("Running lines detection on full image ...")
+    print("Running lines detection ...")
     image = read_image(image_path)
     craft_net = load_craftnet_model(cuda=False)
     refine_net = load_refinenet_model(cuda=False)
 
     # Detect lines in the FULL IMAGE
-    import time
-    s = time.time()
     prediction_result = get_prediction(
         image=image,
         craft_net=craft_net,
@@ -33,7 +31,6 @@ def detect_lines(image_path, output_dir, ordered_blocks):
         long_size=1280,
     )
     all_boxes = prediction_result["boxes"]
-    print(time.time() - s)
     
     # Group lines by their corresponding blocks
     block_lines = [[] for _ in ordered_blocks]
