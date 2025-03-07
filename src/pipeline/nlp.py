@@ -1,9 +1,24 @@
 ################
 #    Step 6    #
 ################
+import os
+import warnings
+import transformers
+import torch
+
+# REMOVE THESE FOR DEBUGGING
+# Suppress all warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logs
+warnings.filterwarnings("ignore")  # Suppress Python warnings
+
+# Suppress Hugging Face Transformers logs
+transformers.logging.set_verbosity_error()
+
+# Suppress PyTorch warnings
+torch.set_warn_always(False)
+############################
 
 from transformers import CamembertTokenizer, CamembertForMaskedLM
-import torch
 
 # Charger le modèle et le tokenizer
 tokenizer = CamembertTokenizer.from_pretrained("camembert-base")
