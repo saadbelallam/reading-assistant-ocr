@@ -30,7 +30,7 @@ def correct_text(text: str, output_dir: str) -> str:
     """
     print("Running NLP ...")
     # Tokenizer le texte
-    inputs = tokenizer(text, return_tensors="pt")
+    inputs = tokenizer(text, return_tensors="pt", truncation=True)
     
     # Prédire les mots masqués
     with torch.no_grad():
