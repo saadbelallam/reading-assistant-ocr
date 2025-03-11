@@ -127,4 +127,7 @@ class MetricsComputation:
         recall = TP / (TP + FN)
         self.measures.precision = precision
         self.measures.recall = recall
-        self.measures.F1_score = 2 * (precision * recall) /(precision + recall)
+        if precision + recall == 0:
+            self.measures.F1_score = 0
+        else:
+            self.measures.F1_score = 2 * (precision * recall) /(precision + recall)
