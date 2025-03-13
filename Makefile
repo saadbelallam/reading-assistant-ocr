@@ -35,12 +35,9 @@ evaluate:
 	python3 src/utils/metrics_evaluation.py $(image)
 
 # Evaluate all images in tests/images
-evaluate_all:
-	@echo "\n🔍 Evaluating all images in $(IMAGE_DIR):"
-	@find $(IMAGE_DIR) -type f \( -iname '*.jpg' -o -iname '*.png' \) | while read file; do \
-	    echo "\n📂 Evaluating $$file"; \
-	    python3 src/utils/metrics_evaluation.py "$$file"; \
-	done
+evaluate-all:
+	@echo "\n🔍 Evaluating all results in $(RESULT_DIR):"
+	@python3 src/utils/metrics_evaluation_folder.py $(RESULT_DIR)
 
 # Clean generated results
 clean:

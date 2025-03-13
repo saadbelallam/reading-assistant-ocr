@@ -4,25 +4,17 @@ import sys
 import metrics_methods
 
 def usage():
-    print("Usage: metrics_evaluation.py <input_directory>")
-    print("  Example: ./results.py tests/images/Documents_imprimes/easy/")
+    print("Usage: metrics_evaluation_folder.py <results_directory>")
+    print("  Example: ./metrics_evaluation_folder.py tests/results/")
     sys.exit(1)
 
-def process_image(image_path):
+def process_result_dir(result_dir):
     try:
-        rel_path = os.path.relpath(image_path, "tests/images")
-        rel_no_ext = os.path.splitext(rel_path)[0]
-        results_folder = os.path.join("tests/results", rel_no_ext)
-        
-        if not os.path.isdir(results_folder):
-            print(f"Skipping: Results folder '{results_folder}' not found")
-            return None
-
-        ocr_file = os.path.join(results_folder, "5_ocr_output.txt")
-        expected_file = os.path.join(results_folder, "expected.txt")
+        ocr_file = os.path.join(result_dir, "5_ocr_output.txt")
+        expected_file = os.path.join(result_dir, "expected.txt")
 
         if not all(os.path.isfile(f) for f in [ocr_file, expected_file]):
-            print(f"Skipping: Missing files in {results_folder}")
+            print(f"Skipping: Missing files in {result_dir}")
             return None
 
         with open(ocr_file, 'r', encoding='utf-8') as f:
@@ -30,7 +22,6 @@ def process_image(image_path):
         with open(expected_file, 'r', encoding='utf-8') as f:
             original_input = f.read().strip()
 
-        # Calcul des caractéristiques du texte
         original_char_count = len(original_input)
         original_word_count = len(original_input.split())
 
@@ -58,16 +49,16 @@ def process_image(image_path):
         }
 
     except Exception as e:
-        print(f"Error processing {image_path}: {str(e)}")
+        print(f"Error processing {result_dir}: {str(e)}")
         return None
 
 def main():
     if len(sys.argv) != 2:
         usage()
     
-    input_dir = sys.argv[1]
-    if not os.path.isdir(input_dir):
-        print(f"Error: Input directory '{input_dir}' not found")
+    results_root = sys.argv[1]
+    if not os.path.isdir(results_root):
+        print(f"Error: Results directory '{results_root}' not found")
         sys.exit(1)
 
     total_weight = 0
@@ -89,31 +80,32 @@ def main():
         'total_chars': 0
     }
 
-    total_files = 0
+    total_dirs = 0
     success_count = 0
 
-    for root, _, files in os.walk(input_dir):
-        for file in files:
-            if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                total_files += 1
-                image_path = os.path.join(root, file)
-                result = process_image(image_path)
+    # Walk through all result directories
+    for root, dirs, files in os.walk(results_root):
+        # Skip directories that don't contain both required files
+        if ('5_ocr_output.txt' in files) and ('expected.txt' in files):
+            total_dirs += 1
+            result_dir = root
+            result = process_result_dir(result_dir)
+            
+            if result:
+                success_count += 1
+                weight = result['counts']['original_chars']
+                total_weight += weight
                 
-                if result:
-                    success_count += 1
-                    weight = result['counts']['original_chars']
-                    total_weight += weight
-                    
-                    for metric in weighted_metrics:
-                        weighted_metrics[metric] += result['metrics'][metric] * weight
-                    
-                    for metric in absolute_metrics:
-                        if metric in result['counts']:
-                            absolute_metrics[metric] += result['counts'][metric]
-                        elif metric in result['metrics']:
-                            absolute_metrics[metric] += result['metrics'][metric]
-                    
-                    absolute_metrics['total_chars'] += weight
+                for metric in weighted_metrics:
+                    weighted_metrics[metric] += result['metrics'][metric] * weight
+                
+                for metric in absolute_metrics:
+                    if metric in result['counts']:
+                        absolute_metrics[metric] += result['counts'][metric]
+                    elif metric in result['metrics']:
+                        absolute_metrics[metric] += result['metrics'][metric]
+                
+                absolute_metrics['total_chars'] += weight
 
     final_metrics = {}
     if total_weight > 0:
@@ -143,28 +135,27 @@ def main():
     except ZeroDivisionError:
         global_f1 = 0
 
-    # Rapport final
-    print("\n=== Rapport pondéré par longueur de texte ===")
-    print(f"Nombre total de caractères analysés: {absolute_metrics['total_chars']}")
-    print(f"Images traitées: {success_count}/{total_files}")
+    print("\n=== Weighted Report by Text Length ===")
+    print(f"Total analyzed characters: {absolute_metrics['total_chars']}")
+    print(f"Processed results: {success_count}/{total_dirs}")
     
-    print("\nMétriques pondérées:")
+    print("\nWeighted Metrics:")
     for metric, value in final_metrics.items():
         print(f"{metric}: {value:.4f}")
     
-    print("\nMétriques globales:")
-    print(f"Précision caractère globale: {global_character_accuracy:.2f}%")
-    print(f"Précision mot globale: {global_precision:.4f}")
-    print(f"Rappel mot global: {global_recall:.4f}")
-    print(f"F1-score mot global: {global_f1:.4f}")
+    print("\nGlobal Metrics:")
+    print(f"Character Accuracy: {global_character_accuracy:.2f}%")
+    print(f"Word Precision: {global_precision:.4f}")
+    print(f"Word Recall: {global_recall:.4f}")
+    print(f"Word F1-Score: {global_f1:.4f}")
     
-    print("\nErreurs absolues (total):")
+    print("\nAbsolute Errors (total):")
     print(f"Lev Distance: {absolute_metrics['levenshtein_distance']}")
     print(f"Substitutions: {absolute_metrics['substitutions']}")
     print(f"Insertions: {absolute_metrics['insertions']}")
     print(f"Deletions: {absolute_metrics['deletions']}")
     
-    print("\nErreurs relatives (pour 1000 caractères):")
+    print("\nRelative Errors (per 1000 characters):")
     if absolute_metrics['total_chars'] > 0:
         chars_per_1000 = absolute_metrics['total_chars'] / 1000
         print(f"Lev Distance: {absolute_metrics['levenshtein_distance'] / chars_per_1000:.1f}")
