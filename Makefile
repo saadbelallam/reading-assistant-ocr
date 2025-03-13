@@ -39,6 +39,19 @@ evaluate-all:
 	@echo "\n🔍 Evaluating all results in $(RESULT_DIR):"
 	@python3 src/utils/metrics_evaluation_folder.py $(RESULT_DIR)
 
+MAKEFLAGS += --no-print-directory
+
+# Capture image from webcam and process it
+webcam:
+	@echo "\n📷 Starting webcam capture..."
+	@python3 src/utils/webcam_capture.py $(IMAGE_DIR)
+	@if [ -n "$$(ls -t $(IMAGE_DIR)/webcam/*.jpg 2>/dev/null | head -1)" ]; then \
+	    latest_image=$$(ls -t $(IMAGE_DIR)/webcam/*.jpg | head -1); \
+	    make process-image image=$$latest_image; \
+	else \
+	    @echo "\n❌ No webcam images found to process."; \
+	fi
+
 # Clean generated results
 clean:
 	@echo "\n🧹 Cleaning up generated results in $(RESULT_DIR)/**"
@@ -51,7 +64,7 @@ help:
 	@echo "  make process-image image=<path> [time=true]  Process a single image"
 	@echo "  make process-all [time=true]                 Process all images in $(IMAGE_DIR)"
 	@echo "  make evaluate image=<path>                   Evaluate OCR output of a single image"
-	@echo "  make evaluate_all                            Evaluate OCR output for all images in $(IMAGE_DIR)"
+	@echo "  make evaluate-all                            Evaluate OCR output for all images in $(IMAGE_DIR)"
 	@echo "  make clean                                   Remove all generated results in $(RESULT_DIR)"
 	@echo "  make help                                    Show this help message"
 
