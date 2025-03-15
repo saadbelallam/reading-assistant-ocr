@@ -4,7 +4,7 @@ import sys
 import metrics_methods
 
 def usage():
-    print("Usage: results.py <image_path>")
+    print("Usage: metrics_evaluation.py <image_path>")
     print("  Example: results.py tests/images/Documents_imprimes/easy/001.png")
     sys.exit(1)
 

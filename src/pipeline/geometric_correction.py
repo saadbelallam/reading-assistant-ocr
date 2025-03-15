@@ -18,7 +18,7 @@ def scan_document(input_image_path, output_dir):
     def process_image(img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         avg_intensity = np.mean(gray)
-        print("its intensity : ", avg_intensity)
+        #print("its intensity : ", avg_intensity)
         # Determine thresholding method based on average intensity
         if avg_intensity > 215:  # Pre-scanned documents (bright background)
             _, thresh = cv2.threshold(gray, avg_intensity, 255, cv2.THRESH_BINARY)

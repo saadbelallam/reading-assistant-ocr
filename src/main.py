@@ -51,9 +51,9 @@ def main():
     start_time = time.time()
 
     # 1. Geometric correction could go here if needed.
-    start_geo = time.time()
-    image_path = scan_document(image_path, result_path)
-    timing_report["Geometric Correction"] = time.time() - start_geo
+    #start_geo = time.time()
+    #image_path = scan_document(image_path, result_path)
+    #timing_report["Geometric Correction"] = time.time() - start_geo
         
     # 2. Block detection – store intermediate results in result_path
     start_block_detect = time.time()
@@ -74,12 +74,11 @@ def main():
     start_ocr = time.time()
     text = extract_text(image_path, result_path, lines)
     timing_report["OCR Processing"] = time.time() - start_ocr
-    
-    # Implemented but so slowww
+
     # 6. NLP text correction – correct the OCR text
-    # start_nlp = time.time()
-    # text = correct_text(text)
-    # timing_report["NLP Correction"] = time.time() - start_nlp
+    start_nlp = time.time()
+    text = correct_text(text, result_path)
+    timing_report["NLP Correction"] = time.time() - start_nlp
 
     # 7. Audio generation
     # start_audio = time.time()
