@@ -72,12 +72,12 @@ def main():
 
     # 5. OCR processing – extract text using ordered lines
     start_ocr = time.time()
-    text = extract_text(image_path, result_path, lines)
+    text, masks = extract_text(image_path, result_path, lines)
     timing_report["OCR Processing"] = time.time() - start_ocr
 
     # 6. NLP text correction – correct the OCR text
     start_nlp = time.time()
-    text = correct_text(text, result_path)
+    text = correct_text(text, masks, result_path)
     timing_report["NLP Correction"] = time.time() - start_nlp
 
     # 7. Audio generation

@@ -12,3 +12,6 @@ venv/
 
 # OS specific files
 .DS_Store
+
+# Local model files
+models/camembert-base/
