@@ -37,11 +37,11 @@ def download_models():
 
     print(f"└──CamemBERT model and tokenizer saved to {model_dir}")
 
-def _load_model():
+def _load_model(model_dir: str):
     """Lazy-load the tokenizer and model from local directory."""
     global _tokenizer, _model
     if _tokenizer is None or _model is None:
-        local_model_dir = "models/camembert-base"
+        local_model_dir = model_dir
         if not os.path.exists(local_model_dir):
             download_models()
         _tokenizer = CamembertTokenizer.from_pretrained(local_model_dir)
@@ -68,12 +68,16 @@ def calculate_similarity(ocr_word, candidate_word):
             score += min(candidate_counts[c], ocr_counts[c])
     return score
 
-def correct_text(text: str, masks: list, output_dir: str) -> str:
+def correct_text(text: str, masks: list, output_dir: str, nlp_config: dict) -> str:
     """
     Remplace les <mask> dans le texte par des mots prédits par le modèle.
     """
     print("Running NLP ...")
-    tokenizer, model = _load_model()
+    model_dir = nlp_config["model_path"]
+    similarity_threshold = nlp_config["similarity_threshold"]
+    top_k = nlp_config["top_k"]
+
+    tokenizer, model = _load_model(model_dir)
 
     # Tokenizer le texte
     inputs = tokenizer(text, return_tensors="pt", truncation=True)
@@ -89,8 +93,8 @@ def correct_text(text: str, masks: list, output_dir: str) -> str:
     for i, mask_index in enumerate(mask_token_index):
         ocr_prediction = masks[i]
 
-        # Get top 20 predictions
-        top_predictions = logits[0, mask_index].topk(20).indices
+        # Get top predictions
+        top_predictions = logits[0, mask_index].topk(top_k).indices
         candidates = [tokenizer.decode([idx]).strip() for idx in top_predictions]
 
         # Find best match with OCR prediction
@@ -106,7 +110,7 @@ def correct_text(text: str, masks: list, output_dir: str) -> str:
         ocr_len = len(ocr_prediction)
         similarity_ratio = highest_score / ocr_len if ocr_len > 0 else 0.0
 
-        if similarity_ratio < 0.1 or not best_match:
+        if similarity_ratio < similarity_threshold or not best_match:
             best_match = ocr_prediction
         predicted_tokens.append(best_match)
 

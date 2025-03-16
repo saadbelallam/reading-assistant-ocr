@@ -3,6 +3,7 @@ import argparse
 import os
 import time
 import shutil
+import json
 
 from pipeline.geometric_correction import scan_document
 from pipeline.blocks_detection import detect_text_blocks_rlsa
@@ -14,7 +15,14 @@ from pipeline.audio_generation import generate
 
 from utils.timing_out import timing_out
 
+def load_config():
+    """Load configuration from settings.json"""
+    with open("config/settings.json", "r") as f:
+        return json.load(f)
+    
 def main():
+    config = load_config()
+
     parser = argparse.ArgumentParser(description="Process a document image through the pipeline.")
     parser.add_argument("--input", type=str, required=True, help="Path to the input image")
     parser.add_argument("--output-dir", type=str, required=True, help="Base output directory for results")
@@ -42,7 +50,7 @@ def main():
         dest_txt = os.path.join(result_path, "expected.txt")
         shutil.copy(corresponding_txt, dest_txt)
     else:
-        print("===============> No corresponding text file found for input image")
+        print("└──No corresponding text file found for input image")
     
     # Initialize timing report dictionary
     timing_report = {}
@@ -50,40 +58,52 @@ def main():
     # Start total processing time
     start_time = time.time()
 
-    # 1. Geometric correction could go here if needed.
-    #start_geo = time.time()
-    #image_path = scan_document(image_path, result_path)
-    #timing_report["Geometric Correction"] = time.time() - start_geo
-        
-    # 2. Block detection – store intermediate results in result_path
-    start_block_detect = time.time()
-    blocks = detect_text_blocks_rlsa(image_path, result_path)
-    timing_report["Block Detection"] = time.time() - start_block_detect
+    try:
+        # 1. Geometric correction
+        if config["geometric_correction"].get("enabled", False):
+            start_geo = time.time()
+            image_path = scan_document(image_path, result_path)
+            timing_report["Geometric Correction"] = time.time() - start_geo
 
-    # 3. Blocks ordering – also store ordering visualization in result_path
-    start_block_order = time.time()
-    ordered_blocks, _ = order_blocks(image_path, blocks, result_path)
-    timing_report["Block Ordering"] = time.time() - start_block_order
-    
-    # 4. Lines detection using Craft
-    start_lines_detect = time.time()
-    lines = detect_lines(image_path, result_path, ordered_blocks)
-    timing_report["Lines Detection"] = time.time() - start_lines_detect
+        # 2. Block detection – store intermediate results in result_path
+        if config["blocks_detection"].get("enabled", False):
+            start_block_detect = time.time()
+            blocks = detect_text_blocks_rlsa(image_path, result_path)
+            timing_report["Block Detection"] = time.time() - start_block_detect
 
-    # 5. OCR processing – extract text using ordered lines
-    start_ocr = time.time()
-    text, masks = extract_text(image_path, result_path, lines)
-    timing_report["OCR Processing"] = time.time() - start_ocr
+        # 3. Blocks ordering – also store ordering visualization in result_path
+        if config["blocks_ordering"].get("enabled", False):
+            start_block_order = time.time()
+            ordered_blocks, _ = order_blocks(image_path, blocks, result_path)
+            timing_report["Block Ordering"] = time.time() - start_block_order
 
-    # 6. NLP text correction – correct the OCR text
-    start_nlp = time.time()
-    text = correct_text(text, masks, result_path)
-    timing_report["NLP Correction"] = time.time() - start_nlp
+        # 4. Lines detection using Craft
+        if config["lines_detection"].get("enabled", False):
+            start_lines_detect = time.time()
+            lines = detect_lines(image_path, result_path, ordered_blocks)
+            timing_report["Lines Detection"] = time.time() - start_lines_detect
 
-    # 7. Audio generation
-    # start_audio = time.time()
-    # generate(text, result_path)
-    # timing_report["Audio generation"] = time.time() - start_audio
+        # 5. OCR processing – extract text using ordered lines
+        if config["ocr"].get("enabled", False):
+            start_ocr = time.time()
+            text, masks = extract_text(image_path, result_path, lines, config["ocr"])
+            timing_report["OCR Processing"] = time.time() - start_ocr
+
+        # 6. NLP text correction – correct the OCR text
+        if config["nlp"].get("enabled", False):
+            start_nlp = time.time()
+            text = correct_text(text, masks, result_path, config["nlp"])
+            timing_report["NLP Correction"] = time.time() - start_nlp
+
+        # 7. Audio generation
+        if config["audio_generation"].get("enabled", False):
+            start_audio = time.time()
+            generate(text, result_path)
+            timing_report["Audio generation"] = time.time() - start_audio
+
+    except KeyError as e:
+        print(f"Missing configuration key: {e}")
+        return
     
     # Timing report printing
     total_time = time.time() - start_time

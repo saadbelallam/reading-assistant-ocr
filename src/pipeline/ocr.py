@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from typing import List
 
-def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray, masks: list) -> str:
+def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray, masks: list, ocr_config: dict) -> str:
     """
     Process a single text line, masking unrecognized words while preserving line structure
     """
@@ -25,8 +25,8 @@ def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray,
     # Get OCR data with word-level information
     data = pytesseract.image_to_data(
         cropped,
-        lang='fra',
-        config='--psm 7 --oem 1',  # Treat as single text line
+        lang=ocr_config.get("lang", "fra"),
+        config=f'--psm {ocr_config["psm"]} --oem {ocr_config["oem"]}',
         output_type=Output.DICT
     )
     
@@ -42,8 +42,9 @@ def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray,
         if not text or conf < 0:
             continue
             
-        # Validate word: confidence > 60 and contains letters
-        if conf < 60 or not (any(c.isalpha() for c in text) or all(c in allowed_chars for c in text)):
+        # Validate word: confidence > min_confidence and contains letters
+        min_confidence = ocr_config.get("min_confidence", 40)
+        if conf < min_confidence or not (any(c.isalpha() for c in text) or all(c in allowed_chars for c in text)):
             processed_line.append("<mask>")
             masks.append(text)
         else:
@@ -51,7 +52,7 @@ def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray,
         
     return ' '.join(processed_line)
 
-def extract_text(image_path: str, output_dir: str, ordered_lines: List[np.ndarray]):
+def extract_text(image_path: str, output_dir: str, ordered_lines: List[np.ndarray], ocr_config: dict) -> str:
     print("Running OCR ...")
     masks = []
     image = cv2.imread(image_path)
@@ -65,7 +66,7 @@ def extract_text(image_path: str, output_dir: str, ordered_lines: List[np.ndarra
     # Batch processing to reduce per-call overhead
     full_text = []
     for region in ordered_lines:
-        text = extract_text_from_region(preprocessed, region, masks)
+        text = extract_text_from_region(preprocessed, region, masks, ocr_config)
         full_text.append(text)
 
     # Save results

@@ -1,0 +1,35 @@
+{
+    "paths": {
+        "input_dir": "tests/images",
+        "output_dir": "results"
+    },
+    "geometric_correction": {
+        "enabled": false
+    },
+    "blocks_detection": {
+        "enabled": true
+    },
+    "blocks_ordering": {
+        "enabled": true,
+        "startegy": "TO DO"
+    },
+    "lines_detection": {
+        "enabled": true
+    },
+    "ocr": {
+        "enabled": true,
+        "lang": "fra",
+        "psm": 7,
+        "oem": 1,
+        "min_confidence": 40
+    },
+    "nlp": {
+        "enabled": true,
+        "model_path": "models/camembert-base",
+        "similarity_threshold": 0.1,
+        "top_k": 100
+    },
+    "audio_generation": {
+        "enabled": false
+    }
+}
