@@ -25,7 +25,7 @@ def detect_lines(image_path, output_dir, ordered_blocks):
         craft_net=craft_net,
         refine_net=refine_net,
         text_threshold=0.7,
-        link_threshold=0.4,
+        link_threshold=0.7,
         low_text=0.4,
         cuda=False,
         long_size=1280,
