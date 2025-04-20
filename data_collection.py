@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import os
 
-from src.pipeline.lines_detection import apply_craft_detection
+from src.pipeline.lines_detection1 import apply_craft_detection
 
 ordered_indices = []
 original_boxes = []
