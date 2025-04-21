@@ -17,5 +17,16 @@ dependencies = [
   "sentencepiece",
   "pytesseract",
   "imutils",
-  "argparse"  # stdlib, mais parfois mentionnée pour compat
+  "argparse" , 
+  "matplotlib",
+  "hdbscan",
+  "shapely",
+  "torch_geometric",
+
+ # --------------- ORO additions ---------------
+  "scikit-learn>=1.3",           
+  "pillow",                       
+  "tqdm",
+  "lxml",
+  "networkx"
 ]

@@ -31,5 +31,10 @@
     },
     "audio_generation": {
         "enabled": false
+    },
+    "ordering": {
+        "use_cluster": true,
+        "algorithm": "oro",       
+        "oro_decoder": "count"       
     }
 }
