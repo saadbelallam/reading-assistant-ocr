@@ -8,19 +8,8 @@ IMAGE_DIR = tests/images
 export PYTHONPATH := $(PYTHONPATH):$(CURDIR)
 # Install all dependencies
 install:
-<<<<<<< Updated upstream
 	@echo "\n📦 Installing dependencies from requirements.txt..."
 	@pip install -r requirements.txt
-=======
-	@echo "Exécution du script d'installation (setup.sh)..."
-	@chmod +x setup.sh && ./setup.sh
-
-# Supprimer tout ce qui a été généré
-delete:
-	@echo "Suppression de l'environnement et des modèles"
-	rm -rf .venv/
-	@echo "Tout a été nettoyé."
->>>>>>> Stashed changes
 
 # Process a single image (pass 'image=<path>' and optional 'time=true')
 process-image:
