@@ -4,7 +4,8 @@ import sys
 import json
 import cv2
 import numpy as np
-from src.pipeline.lines_detection1 import apply_craft_detection
+from src.pipeline.lines_detection_v2 import apply_craft_detection
+import pytesseract
 
 # -------------  Utilitaires -------------
 def get_image_size(path):
@@ -14,10 +15,21 @@ def get_image_size(path):
     h, w = img.shape[:2]
     return w, h
 
-def box_to_dict(poly):
+def box_to_dict(poly, image_path):
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
-    return {"x": min(xs), "y": min(ys), "w": max(xs) - min(xs), "h": max(ys) - min(ys)}
+    x, y, w, h = min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)
+
+    img = cv2.imread(image_path)
+    crop = img[y:y+h, x:x+w]   # extrait la zone
+
+    text = ""
+    if crop.size > 0:
+        config = "--psm 7"   # mode pour ligne unique de texte
+        text = pytesseract.image_to_string(crop, lang="fra", config=config)
+        text = text.strip()
+
+    return {"x": x, "y": y, "w": w, "h": h, "text": text}
 
 # -------------  Détection CRAFT -------------
 def bloc_detection(image_path, output_dir="outputs"):
@@ -93,7 +105,7 @@ def manual_sort(image_path, polys):
         return None
 
     return {
-        "boxes": [box_to_dict(p) for p in polys],
+        "boxes": [box_to_dict(p,image_path) for p in polys],
         "reading_order": [i + 1 for i in ordered_indices]
     }
 # -------------  Pipeline principal -------------
