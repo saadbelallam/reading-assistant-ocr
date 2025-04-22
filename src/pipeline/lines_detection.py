@@ -12,24 +12,12 @@ from models.craft_text_detector import (
     empty_cuda_cache
 )
 import numpy as np
+import torch
 
 def detect_lines(image_path, output_dir, ordered_blocks):
     print("Running lines detection ...")
     image = read_image(image_path)
-    craft_net = load_craftnet_model(cuda=False)
-    refine_net = load_refinenet_model(cuda=False)
-
-    # Detect lines in the FULL IMAGE
-    prediction_result = get_prediction(
-        image=image,
-        craft_net=craft_net,
-        refine_net=refine_net,
-        text_threshold=0.7,
-        link_threshold=0.4,
-        low_text=0.4,
-        cuda=False,
-        long_size=1280,
-    )
+    prediction_result = apply_craft_detection(image_path)
     all_boxes = prediction_result["boxes"]
     
     # Group lines by their corresponding blocks
@@ -60,3 +48,35 @@ def detect_lines(image_path, output_dir, ordered_blocks):
     empty_cuda_cache()
 
     return sorted_lines
+
+def apply_craft_detection(image_path):
+    """
+    Applique CRAFT sur une image pour détecter les zones de texte.
+
+    Args:
+        image_path (str): Chemin de l'image.
+
+    Returns:
+        dict: Résultat brut de la détection contenant les boxes et heatmaps.
+    """
+    # Utiliser CUDA si disponible
+    use_cuda = torch.cuda.is_available()
+    image = read_image(image_path)
+    
+    # Chargement des modèles
+    craft_net = load_craftnet_model(cuda=use_cuda)
+    refine_net = load_refinenet_model(cuda=use_cuda)
+
+    # Prédiction
+    prediction = get_prediction(
+        image=image,
+        craft_net=craft_net,
+        refine_net=refine_net,
+        text_threshold=0.7,
+        link_threshold=0.75,
+        low_text=0.4,
+        cuda=use_cuda,
+        long_size=1280,
+    )
+
+    return prediction
