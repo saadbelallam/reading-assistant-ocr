@@ -55,7 +55,8 @@ def detect_lines(image_path, output_dir, ordered_blocks):
 
     # Export all lines in reading order
     export_detected_regions(image=image, regions=sorted_lines, rectify=True)
-    export_extra_results(image=image, regions=sorted_lines, output_path=output_dir)
+    if output_dir:
+        export_extra_results(image=image, regions=sorted_lines, output_path=output_dir)
     empty_cuda_cache()
 
     return sorted_lines
