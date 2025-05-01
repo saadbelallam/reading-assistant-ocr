@@ -1,15 +1,15 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import DataLoader
-from models.reading_order.model import ReadingOrderModel
 from data.reading_order_dataset import ReadingOrderDataset
+from model import ReadingOrderModel
+from loss import weighted_bce_loss
+from optimizer import build_optimizer
 
 def train():
     # Hyperparameters
     batch_size = 64
     lr = 1e-4
-    num_epochs = 20
+    num_epochs = 15
 
     # Load dataset
     dataset_path = "data/processed/processed.jsonl"
@@ -18,13 +18,13 @@ def train():
     train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [split, len(full_dataset) - split])
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
     # Model, Loss, Optimizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ReadingOrderModel().to(device)
-    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([3.0]).to(device))
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    pos_weight = 10.0
+    optimizer = build_optimizer(model, lr=lr)
 
     best_val_loss = float('inf')
 
@@ -40,7 +40,7 @@ def train():
 
             optimizer.zero_grad()
             outputs = model(coords_i, coords_j, cls_1, cls_2)
-            loss = criterion(outputs.squeeze(), labels)
+            loss = weighted_bce_loss(outputs.squeeze(), labels, pos_weight=pos_weight)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
@@ -57,7 +57,7 @@ def train():
                 labels = batch['label'].to(device)
 
                 outputs = model(coords_i, coords_j, cls_1, cls_2)
-                loss = criterion(outputs.squeeze(), labels)
+                loss = weighted_bce_loss(outputs.squeeze(), labels, pos_weight=pos_weight)
                 val_loss += loss.item()
 
         print(f"Epoch {epoch+1} — Train Loss: {train_loss/len(train_loader):.4f} — Val Loss: {val_loss/len(val_loader):.4f}")

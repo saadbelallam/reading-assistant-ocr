@@ -27,17 +27,6 @@ class ReadingOrderDataset(Dataset):
 
     def __len__(self):
         return len(self.pairs)
-
-    #def __getitem__(self, idx):
-    #    pair = self.pairs[idx]
-#
-    #    return {
-    #        "box1": self.boxes[pair["box1"]],
-    #        "box2": self.boxes[pair["box2"]],
-    #        "cls1": self.embeddings[pair["cls1"]],
-    #        "cls2": self.embeddings[pair["cls2"]],
-    #        "label": pair["label"]
-    #    }
     
     def __getitem__(self, idx):
         pair = self.pairs[idx]
