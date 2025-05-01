@@ -4,6 +4,12 @@ tests/**
 *.jpg
 *.jpeg
 
+# Ignore processed files
+data/processed/*.json
+
+# Ignore reading order model
+*.pt
+
 # Python cache files
 __pycache__/
 *.pyc

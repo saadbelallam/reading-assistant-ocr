@@ -1,7 +1,3 @@
-"""
-Training Script
-"""
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,9 +11,11 @@ def train():
     lr = 1e-4
     num_epochs = 20
 
-    # Load dataset (.json format X: [x1,y1,w1,h1,x2,y2,w2,h2], Y: 0/1)
-    train_dataset = ReadingOrderDataset("data/train.json")
-    val_dataset = ReadingOrderDataset("data/val.json")
+    # Load dataset
+    dataset_path = "data/processed/processed.jsonl"
+    full_dataset = ReadingOrderDataset(dataset_path)
+    split = int(0.9 * len(full_dataset))
+    train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [split, len(full_dataset) - split])
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -33,12 +31,16 @@ def train():
     for epoch in range(num_epochs):
         model.train()
         train_loss = 0.0
-        for coords, semantics, labels in train_loader:
-            coords, semantics, labels = coords.to(device), semantics.to(device), labels.to(device)
+        for batch in train_loader:
+            coords_i = batch['box1'].to(device)
+            coords_j = batch['box2'].to(device)
+            cls_1 = batch['cls1'].to(device)
+            cls_2 = batch['cls2'].to(device)
+            labels = batch['label'].to(device)
 
             optimizer.zero_grad()
-            outputs = model(coords, semantics)
-            loss = criterion(outputs.squeeze(), labels.float())
+            outputs = model(coords_i, coords_j, cls_1, cls_2)
+            loss = criterion(outputs.squeeze(), labels)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
@@ -47,33 +49,23 @@ def train():
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for coords, semantics, labels in val_loader:
-                coords, semantics, labels = coords.to(device), semantics.to(device), labels.to(device)
-                outputs = model(coords, semantics)
-                loss = criterion(outputs.squeeze(), labels.float())
+            for batch in val_loader:
+                coords_i = batch['box1'].to(device)
+                coords_j = batch['box2'].to(device)
+                cls_1 = batch['cls1'].to(device)
+                cls_2 = batch['cls2'].to(device)
+                labels = batch['label'].to(device)
+
+                outputs = model(coords_i, coords_j, cls_1, cls_2)
+                loss = criterion(outputs.squeeze(), labels)
                 val_loss += loss.item()
 
-        train_loss /= len(train_loader)
-        val_loss /= len(val_loader)
-        print(f"Epoch {epoch+1}/{num_epochs} - Train Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f}")
+        print(f"Epoch {epoch+1} — Train Loss: {train_loss/len(train_loader):.4f} — Val Loss: {val_loss/len(val_loader):.4f}")
 
-        # Save best model only (one single checkpoint)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(model.state_dict(), "models/reading_order/best_model.pt")
-            print(f"✅ Saved new best model at epoch {epoch+1}")
+            print(f"Saved best model at epoch {epoch+1}")
 
 if __name__ == "__main__":
-    """
-    Expected Dataset Format:
-    -------------------------
-    The training and validation JSON files must contain:
-    {
-        "X": [[x1, y1, w1, h1, x2, y2, w2, h2], ...],  # shape: (N, 8)
-        "semantic_embedding_1": [[...], ...],         # shape: (N, D)
-        "semantic_embedding_2": [[...], ...],         # shape: (N, D)
-        "Y": [0 or 1, ...]                           # shape: (N,)
-    }
-    Only one model ('best_model.pt') will be saved during training.
-    """
     train()

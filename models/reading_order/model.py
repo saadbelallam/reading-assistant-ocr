@@ -32,12 +32,10 @@ class SemanticBranch(nn.Module):
         self.pooler = nn.Linear(config.hidden_size * 2, hidden_dim)
         self.activation = nn.ReLU()
 
-    def forward(self, input_ids_i, attention_mask_i, input_ids_j, attention_mask_j):
-        # get [CLS] embeddings for both regions
-        out_i = self.transformer(input_ids=input_ids_i, attention_mask=attention_mask_i).last_hidden_state[:, 0, :]
-        out_j = self.transformer(input_ids=input_ids_j, attention_mask=attention_mask_j).last_hidden_state[:, 0, :]
-        x = torch.cat([out_i, out_j], dim=-1)
-        return self.activation(self.pooler(x))
+    def forward(self, cls1, cls2):
+        x = torch.cat([cls1, cls2], dim=-1)
+        x = self.pooler(x)
+        return self.activation(x)
 
 class ReadingOrderModel(nn.Module):
     def __init__(self, spatial_dim=4, hidden_dim=64, model_name="camembert-base", pos_weight=None):
@@ -51,10 +49,9 @@ class ReadingOrderModel(nn.Module):
         )
         # optionally store pos_weight for loss
         self.pos_weight = pos_weight
-
-    def forward(self, coords_i, coords_j, input_ids_i, attention_mask_i, input_ids_j, attention_mask_j):
-        spatial_feat = self.spatial_branch(coords_i, coords_j)
-        semantic_feat = self.semantic_branch(input_ids_i, attention_mask_i, input_ids_j, attention_mask_j)
-        x = torch.cat([spatial_feat, semantic_feat], dim=-1)
-        logits = self.classifier(x).squeeze(-1)
-        return logits
+    
+    def forward(self, box_1, box_2, cls1, cls2):
+        spatial = self.spatial_branch(box_1, box_2)
+        semantic = self.semantic_branch(cls1, cls2)
+        x = torch.cat([spatial, semantic], dim=-1)
+        return self.classifier(x).squeeze(-1)
