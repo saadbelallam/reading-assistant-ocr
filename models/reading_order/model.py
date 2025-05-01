@@ -29,7 +29,7 @@ class SemanticBranch(nn.Module):
         if freeze_transformer:
             for param in self.transformer.parameters():
                 param.requires_grad = False
-        self.pooler = nn.Linear(config.hidden_size * 2, hidden_dim)
+        self.pooler = nn.Linear(config.hidden_size * 2, hidden_dim*7)
         self.activation = nn.ReLU()
 
     def forward(self, cls1, cls2):
@@ -43,6 +43,18 @@ class ReadingOrderModel(nn.Module):
         self.spatial_branch = SpatialBranch(input_dim=spatial_dim, hidden_dim=hidden_dim)
         self.semantic_branch = SemanticBranch(model_name=model_name, hidden_dim=hidden_dim)
         self.classifier = nn.Sequential(
+            nn.Linear(hidden_dim * 8, hidden_dim * 7),
+            nn.ReLU(),
+            nn.Linear(hidden_dim * 7, hidden_dim * 6),
+            nn.ReLU(),
+            nn.Linear(hidden_dim * 6, hidden_dim * 5),
+            nn.ReLU(),
+            nn.Linear(hidden_dim * 5, hidden_dim * 4),
+            nn.ReLU(),
+            nn.Linear(hidden_dim * 4, hidden_dim * 3),
+            nn.ReLU(),
+            nn.Linear(hidden_dim * 3, hidden_dim * 2),
+            nn.ReLU(),
             nn.Linear(hidden_dim * 2, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, 1)

@@ -112,10 +112,10 @@ if __name__ == "__main__":
     # Example usage
     blocks = [
         [0, 0, 10, 10],
-        [5, 5, 15, 15],
-        [10, 10, 20, 20]
+        [10, 10, 20, 20],
+        [5, 5, 15, 15]
     ]
-    texts = ["Hello", "World", "Test"]
+    texts = ["Hello", "Test", "World"]
     
     # Predict parent matrix
     P = predict_parent_matrix(blocks, texts)

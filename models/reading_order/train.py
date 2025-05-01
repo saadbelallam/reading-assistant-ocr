@@ -23,7 +23,7 @@ def train():
     # Model, Loss, Optimizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ReadingOrderModel().to(device)
-    pos_weight = 10.0
+    pos_weight = 7.5
     optimizer = build_optimizer(model, lr=lr)
 
     best_val_loss = float('inf')
