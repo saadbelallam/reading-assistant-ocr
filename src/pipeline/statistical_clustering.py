@@ -195,6 +195,13 @@ def hybrid_blocks_detection(quads, prox_thr=1.0, overlap_thr=0.75,
     final_clusters = merge_inclusions(boxes, refined_clusters, overlap_thr)
     final_boxes = boxes_from_clusters(boxes, final_clusters)
 
+    # mapping
+    line2cid = [-1] * len(boxes)
+    for cid, cl in enumerate(final_clusters):
+        for idx in cl:
+            line2cid[idx] = cid
+
+            #visualistation
     if visualize and img_path:
         img = mpimg.imread(img_path)
         h, w = img.shape[:2]
@@ -204,12 +211,12 @@ def hybrid_blocks_detection(quads, prox_thr=1.0, overlap_thr=0.75,
         ax.set_ylim(h, 0)
         for x, y, bw, bh in final_boxes:
             ax.add_patch(plt.Rectangle((x, y), bw, bh, edgecolor='green', linewidth=1, linestyle='-', fill=False))
-        plt.title("Clusters hybrides v3 (fusion post‑pass)")
+        plt.title("Clusters statistiques")
         filename = os.path.basename(img_path)
         print(f"Enregistrement de l'image dans test_new_cluster/{filename}")
         plt.savefig(f"test_new_test/{filename}")
 
-    return final_boxes
+    return final_boxes, line2cid
 
 # ---------------------------------------------------------------------------
 # 5.  EXEMPLE 
