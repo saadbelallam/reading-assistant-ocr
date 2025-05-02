@@ -18,6 +18,8 @@
     },
     "ocr": {
         "enabled": true,
+        "ocr":"easyocr",
+        "gpu": false,
         "lang": "fra",
         "psm": 7,
         "oem": 1,
