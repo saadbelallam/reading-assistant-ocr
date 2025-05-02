@@ -22,6 +22,8 @@ dependencies = [
   "hdbscan",
   "shapely",
   "torch_geometric",
+  "fuzzywuzzy"
+
 
  # --------------- ORO additions ---------------
   "scikit-learn>=1.3",           

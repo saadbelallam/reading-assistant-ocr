@@ -109,26 +109,3 @@ def correct_text(text: str, masks: list, output_dir: str, nlp_config: dict) -> s
 
     return corrected_text
 
-def main():
-    text = "Ce matin, je me suis réveillé très tôt pour aller à la <mask>. L'air était frais et le ciel légèrement couvert. En chemin, j'ai croisé un <mask> qui promenait son chien. Nous avons échangé quelques mots avant de reprendre nos routes respectives. Plus loin, j'ai entendu le bruit d'une <mask> venant du parc, ce qui m'a rappelé mon enfance. Arrivé à destination, j'ai commandé un <mask> chaud pour bien commencer la journée."
-
-    masks = ["gori", "homme", "cloche", "cofg"]
-
-    output_dir = "outputs"
-
-    nlp_config = {
-        "model_path": "models/camembert-base",
-        "similarity_threshold": 0.5,
-        "top_k": 10,
-        "similarity_method": "rudimentary"  # Options: "rudimentary", "levenshtein", "fuzz"
-    }
-
-    corrected = correct_text(text, masks, output_dir, nlp_config)
-    print("✅ Texte corrigé :", corrected)
-
-if __name__ == "__main__":
-    main()
-
-    with open(f"{output_dir}/6_nlp_output.txt", "w") as f:
-        f.write(corrected_text)
-    return corrected_text
