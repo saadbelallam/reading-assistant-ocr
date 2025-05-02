@@ -34,7 +34,8 @@
     },
     "ordering": {
         "use_cluster": true,
-        "algorithm": "oro",       
+        "algo_cluster": "statistic",
+        "algo_ordering": "heatmap",       
         "oro_decoder": "count"       
     }
 }
