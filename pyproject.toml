@@ -22,7 +22,7 @@ dependencies = [
   "hdbscan",
   "shapely",
   "torch_geometric",
-  "fuzzywuzzy"
+  "fuzzywuzzy",
 
 
  # --------------- ORO additions ---------------
@@ -30,5 +30,10 @@ dependencies = [
   "pillow",                       
   "tqdm",
   "lxml",
-  "networkx"
+  "networkx",
+
+  #-------------- easy ocr------------
+  "python-bidi==0.4.2",     
+  "easyocr",
 ]
+
