@@ -26,7 +26,7 @@ dependencies = [
   "deskew",
   "mmcv-full==1.7.1",
   "Pillow==9.4.0",
-
+  "Levenshtein",
 
  # --------------- ORO additions ---------------
   "scikit-learn>=1.3",           
