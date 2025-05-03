@@ -22,7 +22,8 @@ delete:
 process-image:
 	@echo "\n Processing image: $(image)"
 	@if [ "$(time)" = "true" ]; then TIMING_FLAG=-t; else TIMING_FLAG=; fi; \
-	python src/main_v2.py --input $(image) --output-dir $(RESULT_DIR) $$TIMING_FLAG
+	python3 src/main_v2.py --input $(image) --output-dir $(RESULT_DIR) $$TIMING_FLAG
+
 
 # Process all images in tests/images (organized by category)
 process-all:
@@ -30,7 +31,7 @@ process-all:
 	@find $(IMAGE_DIR) -type f \( -iname '*.jpg' -o -iname '*.png' \) | while read file; do \
 	    echo "\n Processing $$file"; \
 	    if [ "$(time)" = "true" ]; then TIMING_FLAG=-t; else TIMING_FLAG=; fi; \
-	    python src/main.py --input $$file --output-dir $(RESULT_DIR) $$TIMING_FLAG; \
+	    python3 src/main.py --input $$file --output-dir $(RESULT_DIR) $$TIMING_FLAG; \
 	done
 
 # Generic evaluation target.
