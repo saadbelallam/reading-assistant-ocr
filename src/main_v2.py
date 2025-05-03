@@ -4,6 +4,7 @@ import cv2
 import shutil
 from utils.timing_out import timing_out
 
+from pipeline.geometric_correction import geometric_correction
 from pipeline.lines_detection_v2 import apply_craft_detection
 from pipeline.ordering_utils   import reading_order
 from pipeline.draw_utils       import draw_polygons, draw_lines
@@ -47,6 +48,12 @@ def prepare_output_folder(img_path, output_dir):
 def process_image(img_path, out_dir, cfg, oro_ckpt,timing ):
     os.makedirs(out_dir, exist_ok=True)
     report, t0 = {}, time.time()
+
+    # Geometric correction
+    if cfg["geometric_correction"].get("enabled", False):
+        img_path = geometric_correction(img_path, out_dir)
+        report["Geometric"] = time.time() - t0; t0 = time.time()
+
     
     # CRAFT
     if cfg["lines_detection"].get("enabled", False):
