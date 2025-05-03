@@ -2,62 +2,59 @@
 #    Step 1    #
 ################
 
-import cv2
-import numpy as np
 import os
-from imutils.perspective import four_point_transform
+from src.pipeline.statistical_clustering import hybrid_blocks_detection
+from src.pipeline.lines_detection_v2 import apply_craft_detection
+from models.Document_Image_Dewarping.predict import dewarp_image
 
-def scan_document(input_image_path, output_dir):
-    print("Running geometric correction ...")
-    os.makedirs(output_dir, exist_ok=True)
-    
-    image = cv2.imread(input_image_path)
-    if image is None:
-        raise ValueError(f"Image not found: {input_image_path}")
-    
-    def process_image(img):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        avg_intensity = np.mean(gray)
-        #print("its intensity : ", avg_intensity)
-        # Determine thresholding method based on average intensity
-        if avg_intensity > 215:  # Pre-scanned documents (bright background)
-            _, thresh = cv2.threshold(gray, avg_intensity, 255, cv2.THRESH_BINARY)
-        else:  # Non-scanned documents
-            #thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-            #                              cv2.THRESH_BINARY, 11, 2)
-            _, thresh = cv2.threshold(gray, min(avg_intensity, 100), 255, cv2.THRESH_BINARY)
-        
-        return thresh
+from deskew import determine_skew
 
-    def detect_document(img):
-        (h, w) = img.shape[:2]
-        doc_contour = np.array([[0, 0], [w, 0], [w, h], [0, h]])
-        
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        # Use Otsu's thresholding for better contour detection
-        _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        contours = sorted(contours, key=cv2.contourArea, reverse=True)
-        
-        max_area = 0
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area > 1000:
-                peri = cv2.arcLength(contour, True)
-                approx = cv2.approxPolyDP(contour, 0.015 * peri, True)
-                if area > max_area and len(approx) == 4:
-                    doc_contour = approx
-                    max_area = area
-        return doc_contour
+import numpy as np
+from skimage import io
+from skimage.color import rgb2gray
+from skimage.transform import rotate
 
-    doc_contour = detect_document(image)
-    warped = four_point_transform(image, doc_contour.reshape(4, 2))
+
+def text_zones(input_image_path, output_dir) :
+    print(f"Traitement de l'image : {input_image_path}")
+    quads = apply_craft_detection(input_image_path, output_dir="outputs")["boxes"]
+    clusters = hybrid_blocks_detection(quads, output_dir, prox_thr=1.0, overlap_thr=0.75,
+                                visualize=True, img_path=input_image_path)
+
+def deskew(input_image_path, output_dir) :
+    basename = input_image_path.split("/")[-1].replace("1_text_zones.png", "")
+    image = io.imread(input_image_path)
+    # rgba to rgb
+    if image.shape[2] == 4 :
+        image = image[:, :, :3]
+    grayscale = rgb2gray(image)
+    angle = determine_skew(grayscale)
+    rotated = rotate(image, angle, resize=True) * 255
+    # make sure the output directory exists
+    if not os.path.exists(output_dir) :
+        os.makedirs(output_dir)
+    # save the rotated image
+    io.imsave(f"{output_dir}/2_deskewed.png", rotated.astype(np.uint8))
+
+
+
+def geometric_correction(input_image_path, output_dir) :
+    # Step 1: Detect text zones
+    text_zones(input_image_path, output_dir)
+
+    # Step 2: Deskew the image
+    filename = os.path.basename(input_image_path)
+    basename, _ = os.path.splitext(filename)
+    input_image_path = os.path.join(output_dir, "1_text_zones.png")
+    deskew(input_image_path, output_dir)
     
-    processed = process_image(warped)
-    processed = processed[10:processed.shape[0]-10, 10:processed.shape[1]-10]
-    
-    output_path = os.path.join(output_dir, "1_scanned.jpg")
-    cv2.imwrite(output_path, processed)
-    return output_path
+    # # Step 3: Geometric correction
+    input_image_path = os.path.join(output_dir, "2_deskewed.png")
+    output_dir = output_dir + "/3_dewarped.png"
+    dewarp_image(input_image_path, output_dir)
+
+    return output_dir
+
+# if __name__ == '__main__' :
+#     file = "/home/yassine/ab.png"
+#     geometric_correction(file, "outputs")

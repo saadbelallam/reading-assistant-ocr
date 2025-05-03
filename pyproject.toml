@@ -23,6 +23,9 @@ dependencies = [
   "shapely",
   "torch_geometric",
   "fuzzywuzzy",
+  "deskew",
+  "mmcv-full==1.7.1",
+  "Pillow==9.4.0",
 
 
  # --------------- ORO additions ---------------
