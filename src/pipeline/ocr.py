@@ -97,14 +97,10 @@ def extract_text(image_path: str, output_dir: str, ordered_lines: List[np.ndarra
     if image is None:
         raise FileNotFoundError(f"Image not found at {image_path}")
 
-    # Preprocess ONCE for all regions
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, preprocessed = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
     # Batch processing to reduce per-call overhead
     full_text = []
     for region in ordered_lines:
-        text = extract_text_from_region(preprocessed, region, masks, ocr_config)
+        text = extract_text_from_region(image, region, masks, ocr_config)
         full_text.append(text)
 
     # Save results
