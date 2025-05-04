@@ -4,6 +4,7 @@ import cv2
 import shutil
 from utils.timing_out import timing_out
 
+from pipeline.geometric_correction import geometric_correction
 from pipeline.lines_detection_v2 import apply_craft_detection
 from pipeline.ordering_utils   import reading_order
 from pipeline.draw_utils       import draw_polygons, draw_lines
@@ -39,7 +40,7 @@ def prepare_output_folder(img_path, output_dir):
         shutil.copy(expected_txt, dest_txt)
         print("Copie de expected.txt dans le dossier de sortie.")
     else:
-        print("ℹAucun fichier texte attendu trouvé.")
+        print("Aucun fichier texte attendu trouvé.")
 
     return result_path
 
@@ -47,6 +48,12 @@ def prepare_output_folder(img_path, output_dir):
 def process_image(img_path, out_dir, cfg, oro_ckpt,timing ):
     os.makedirs(out_dir, exist_ok=True)
     report, t0 = {}, time.time()
+
+    # Geometric correction
+    if cfg["geometric_correction"].get("enabled", False):
+        img_path = geometric_correction(img_path, out_dir)
+        report["Geometric"] = time.time() - t0; t0 = time.time()
+
     
     # CRAFT
     if cfg["lines_detection"].get("enabled", False):
@@ -57,15 +64,18 @@ def process_image(img_path, out_dir, cfg, oro_ckpt,timing ):
     if cfg["blocks_ordering"].get("enabled", False):
         #parametres
         use_cluster = cfg["ordering"]["use_cluster"]
-        algo = cfg["ordering"]["algorithm"]
+        cluster_algo = cfg["ordering"].get("cluster_algo", "statistic")
+        algo = cfg["ordering"]["algo_ordering"]
         decoder = cfg["ordering"].get("oro_decoder", "count")
-        # ORO or heatmap (with or without clustering)
+        
+        # oro or heatmap (with or without clustering)
         para_ord, line_ord, para_polys = reading_order(
         boxes, img_path,
         oro_ckpt,
         use_cluster=use_cluster,
         decoder=decoder,
-        algo=algo,       
+        algo=algo,   
+        cluster_algo=cluster_algo 
         )
         report["ORO"] = time.time() - t0; t0 = time.time()
 
@@ -97,6 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--timing", action="store_true", help="Afficher les temps d'exécution")
     args = parser.parse_args()
 
+    print("nouveau_main")
     # Préparer proprement le dossier résultat pour cette image
     result_path = prepare_output_folder(args.input, args.output_dir)
 
