@@ -14,17 +14,17 @@
         "startegy": "ML"
     },
     "lines_detection": {
-        "enabled": true
+        "enabled": false
     },
     "ocr": {
-        "enabled": true,
+        "enabled": false,
         "lang": "fra",
         "psm": 7,
         "oem": 1,
         "min_confidence": 40
     },
     "nlp": {
-        "enabled": true,
+        "enabled": false,
         "model_path": "models/camembert-base",
         "similarity_threshold": 0.1,
         "top_k": 100
