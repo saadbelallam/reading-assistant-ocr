@@ -4,12 +4,8 @@ tests/**
 *.jpg
 *.jpeg
 
-# Ignore processed files
-data/processed/*.json
-data/processed/*.jsonl
-
-# Ignore reading order model
-#*.pt
+# Ignore history files
+.history/**
 
 # Python cache files
 __pycache__/

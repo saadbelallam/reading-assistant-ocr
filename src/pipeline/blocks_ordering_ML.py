@@ -157,7 +157,7 @@ def reading_order_blocks(
 
     # Order the blocks using X-Y cut
     P = predict_parent_matrix(normalized_boxes, dummy_texts)
-
+    print("Parent matrix P:", P)
     # Decode using Held-Karp algorithm
     order = held_karp_decoder(P)
 

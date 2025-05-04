@@ -29,10 +29,10 @@ def transform(input_path, output_path):
                 item_id = f"{len(items)}"
                 items[item_id] = {
                     "box": [
-                        x0 / w,  # x
-                        y0 / h,  # y
-                        (x1 - x0) / w,  # width
-                        (y1 - y0) / h   # height
+                        x0 ,  # x
+                        y0 ,  # y
+                        (x1 - x0) ,  # width
+                        (y1 - y0)    # height
                     ],
                     "embedding": get_embedding(block['text'])
                 }
@@ -55,7 +55,7 @@ def transform(input_path, output_path):
                         "box2": str(current_offset + j),
                         "cls1": str(current_offset + i),
                         "cls2": str(current_offset + j),
-                        "label": 1 if j == i + 1 else 0
+                        "label": 1 if j > i else 0
                     }) + '\n')
             current_offset += n
 

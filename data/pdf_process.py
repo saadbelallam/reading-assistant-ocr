@@ -18,6 +18,17 @@ PROCESSED_DIR = "data/processed"
 VISUAL_DIR    = os.path.join(PROCESSED_DIR, "visual")
 BOXES_JSON    = os.path.join(PROCESSED_DIR, "boxes.json")
 
+def empty_cuda_cache():
+        """
+        Clears the CUDA memory cache if PyTorch is available.
+        """
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                print("CUDA cache cleared.")
+        except ImportError:
+            print("PyTorch is not installed. Skipping CUDA cache clearing.")
 
 def is_normal_text(text: str) -> bool:
     # disallow control / formatting chars
@@ -107,8 +118,8 @@ def pdf_to_readingbank_surya_ocr(pdf_dir=RAW_PDF_DIR,
             raw_blocks = []
             for b in boxes:
                 lbl = b.label.lower()
-                if lbl in {"formula","picture","figure","equation", "table", "footnote"}:
-                    continue
+                # if lbl in {"formula","picture","figure","equation", "table", "footnote"}:
+                    # continue
                 # crop & OCR text
                 x0,y0,x1,y1 = [int(c) for c in b.bbox]
                 crop = img.crop((x0,y0,x1,y1))
@@ -160,7 +171,7 @@ def pdf_to_readingbank_surya_ocr(pdf_dir=RAW_PDF_DIR,
 
 if __name__ == "__main__":
     import argparse
-
+    empty_cuda_cache()
     p = argparse.ArgumentParser(
         description="PDF→ReadingBank JSON via Surya+Tesseract"
     )
@@ -176,3 +187,6 @@ if __name__ == "__main__":
         zoom=args.zoom,
         visualize=args.visualize
     )
+
+
+    

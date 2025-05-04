@@ -3,7 +3,7 @@ import os
 import warnings
 import matplotlib.pyplot as plt
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from data.reading_order_dataset import ReadingOrderDataset
 from model import ReadingOrderModel
 from loss import weighted_bce_loss
@@ -18,8 +18,8 @@ def train():
     # Hyperparameters
     batch_size = 32
     lr = 1e-4
-    num_epochs = 14
-    pos_weight = 10
+    num_epochs = 15
+    pos_weight = 1
 
     # Load dataset
     dataset_path = "data/processed/processed.jsonl"
@@ -30,6 +30,17 @@ def train():
     test_split = len(full_dataset) - train_split - val_split
 
     train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_split, val_split, test_split])
+    
+# # ...existing code...
+#     # Calculate class weights based on the imbalance in the training set
+#     train_labels = [int(sample['label']) for sample in train_dataset]
+#     class_counts = torch.bincount(torch.tensor(train_labels, dtype=torch.long))
+#     class_weights = 1.0 / class_counts.float()
+#     sample_weights = class_weights[torch.tensor(train_labels, dtype=torch.long)]
+# # ...existing code...
+    
+#     # Create WeightedRandomSampler for the training dataset
+#     sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -78,7 +89,7 @@ def train():
                 labels = batch['label'].to(device)
 
                 outputs = model(coords_i, coords_j, cls_1, cls_2)
-                loss = weighted_bce_loss(outputs.squeeze(), labels, pos_weight=pos_weight)
+                loss = weighted_bce_loss(outputs, labels, pos_weight=pos_weight)
                 val_loss += loss.item()
 
         avg_val_loss = val_loss / len(val_loader)
