@@ -11,7 +11,7 @@
     },
     "blocks_ordering": {
         "enabled": true,
-        "startegy": "TO DO"
+        "startegy": "ML"
     },
     "lines_detection": {
         "enabled": true

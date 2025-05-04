@@ -7,7 +7,8 @@ import json
 
 from pipeline.geometric_correction import scan_document
 from pipeline.blocks_detection import detect_text_blocks_rlsa
-from pipeline.blocks_ordering import order_blocks
+from pipeline.blocks_ordering_XY import order_blocks
+from pipeline.blocks_ordering_ML import reading_order_blocks
 from pipeline.lines_detection import detect_lines
 from pipeline.ocr import extract_text
 from pipeline.nlp import correct_text
@@ -74,7 +75,10 @@ def main():
         # 3. Blocks ordering – also store ordering visualization in result_path
         if config["blocks_ordering"].get("enabled", False):
             start_block_order = time.time()
-            ordered_blocks, _ = order_blocks(image_path, blocks, result_path)
+            if config["blocks_ordering"].get("startegy", "XY") == "ML":
+                ordered_blocks, _ = reading_order_blocks(image_path, blocks, result_path)
+            else:
+                ordered_blocks, _ = order_blocks(image_path, blocks, result_path)
             timing_report["Block Ordering"] = time.time() - start_block_order
 
         # 4. Lines detection using Craft

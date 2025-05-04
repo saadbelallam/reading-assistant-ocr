@@ -41,21 +41,36 @@ class ReadingOrderModel(nn.Module):
     def __init__(self, spatial_dim=4, hidden_dim=64, model_name="camembert-base", pos_weight=None):
         super().__init__()
         self.spatial_branch = SpatialBranch(input_dim=spatial_dim, hidden_dim=hidden_dim)
-        self.semantic_branch = SemanticBranch(model_name=model_name, hidden_dim=hidden_dim)
+        #self.semantic_branch = SemanticBranch(model_name=model_name, hidden_dim=hidden_dim)
+        #self.classifier = nn.Sequential(
+        #    nn.Linear(hidden_dim * 8, hidden_dim * 7),
+        #    nn.ReLU(),
+        #    nn.Linear(hidden_dim * 7, hidden_dim * 6),
+        #    nn.ReLU(),
+        #    nn.Linear(hidden_dim * 6, hidden_dim * 5),
+        #    nn.ReLU(),
+        #    nn.Linear(hidden_dim * 5, hidden_dim * 4),
+        #    nn.ReLU(),
+        #    nn.Linear(hidden_dim * 4, hidden_dim * 3),
+        #    nn.ReLU(),
+        #    nn.Linear(hidden_dim * 3, hidden_dim * 2),
+        #    nn.ReLU(),
+        #    nn.Linear(hidden_dim * 2, hidden_dim),
+        #    nn.ReLU(),
+        #    nn.Linear(hidden_dim, 1)
+        #)
         self.classifier = nn.Sequential(
-            nn.Linear(hidden_dim * 8, hidden_dim * 7),
+            nn.Linear(hidden_dim * 1, hidden_dim * 2),
             nn.ReLU(),
-            nn.Linear(hidden_dim * 7, hidden_dim * 6),
+            nn.Linear(hidden_dim * 2, hidden_dim * 3),
             nn.ReLU(),
-            nn.Linear(hidden_dim * 6, hidden_dim * 5),
-            nn.ReLU(),
-            nn.Linear(hidden_dim * 5, hidden_dim * 4),
+            nn.Linear(hidden_dim * 3, hidden_dim * 4),
             nn.ReLU(),
             nn.Linear(hidden_dim * 4, hidden_dim * 3),
             nn.ReLU(),
             nn.Linear(hidden_dim * 3, hidden_dim * 2),
             nn.ReLU(),
-            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.Linear(hidden_dim * 2, hidden_dim * 1),
             nn.ReLU(),
             nn.Linear(hidden_dim, 1)
         )
@@ -64,6 +79,7 @@ class ReadingOrderModel(nn.Module):
     
     def forward(self, box_1, box_2, cls1, cls2):
         spatial = self.spatial_branch(box_1, box_2)
-        semantic = self.semantic_branch(cls1, cls2)
-        x = torch.cat([spatial, semantic], dim=-1)
+        #semantic = self.semantic_branch(cls1, cls2)
+        #x = torch.cat([spatial, semantic], dim=-1)
+        x =torch.cat([spatial], dim=-1)
         return self.classifier(x).squeeze(-1)
