@@ -289,3 +289,65 @@ def annotate_image_with_heatmaps(image_path, ordered_polygons, heatmap_states,
         out_path = os.path.join(output_folder, f"heatmap_state_{i}.jpg")
         cv2.imwrite(out_path, overlay)
         print(f"Saved overlay for iteration {i}: {out_path}")
+
+
+
+
+
+
+def get_ordered_polygons(polygons, image_path, annotate=False,
+                         final_output="final_annotated_output.jpg",
+                         heatmaps_folder="heatmap_overlays"):
+    """
+    Applique l'algorithme heatmap_ordering aux boxes détectées par CRAFT.
+
+    Paramètres :
+        boxes : Liste de boîtes détectées (array ou liste de listes de points (x, y)).
+        image_path : Chemin vers l'image utilisée.
+        annotate : Booléen, si True génère les images annotées et les heatmaps.
+        final_output : Nom du fichier de sortie pour l’image annotée.
+        heatmaps_folder : Dossier où stocker les heatmaps si annotate est True.
+
+    Retourne :
+        ordered_polygons : liste ordonnée des polygones.
+    """
+    # Conversion en entiers
+
+    # Chargement de l'image
+    img = cv2.imread(image_path)
+    if img is None:
+        raise ValueError(f"Could not load image: {image_path}")
+    image_shape = img.shape[:2]  # (height, width)
+
+    # Origine initiale = top-left polygon
+    first_poly = min(
+        polygons,
+        key=lambda p: (min(pt[1] for pt in p), min(pt[0] for pt in p))
+    )
+    init_origin = top_left_point(first_poly)
+
+    # Exécution de l’algorithme d’ordre
+    ordered_polygons, heatmap_states = heatmap_ordering(
+        polygons, image_shape,
+        init_origin=init_origin,
+        init_sigma_x=200,
+        init_sigma_y=200,
+        init_angle=0,
+        tighten_factor=0.9,
+        reset_threshold=0.5
+    )
+
+    # Annotations optionnelles
+    if annotate:
+        annotate_image(image_path, ordered_polygons, final_output)
+        annotate_image_with_heatmaps(
+            image_path,
+            ordered_polygons,
+            heatmap_states,
+            200,
+            200,
+            heatmaps_folder
+        )
+
+    return ordered_polygons
+
