@@ -50,7 +50,7 @@ def clean_visualization_dir():
         shutil.rmtree(VISUAL_DIR)
     os.makedirs(VISUAL_DIR, exist_ok=True)
 
-def extract_pages_as_images(pdf_path, zoom=2):
+def extract_pages_as_images(pdf_path, zoom=1):
     doc = fitz.open(pdf_path)
     pages = []
     for p in doc:
@@ -107,7 +107,7 @@ def pdf_to_readingbank_surya_ocr(pdf_dir=RAW_PDF_DIR,
             raw_blocks = []
             for b in boxes:
                 lbl = b.label.lower()
-                if lbl in {"formula","picture","figure","text-inline-math"}:
+                if lbl in {"formula","picture","figure","equation", "table", "footnote"}:
                     continue
                 # crop & OCR text
                 x0,y0,x1,y1 = [int(c) for c in b.bbox]
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     )
     p.add_argument("--pdf_dir",   default=RAW_PDF_DIR)
     p.add_argument("--output_json", default=BOXES_JSON)
-    p.add_argument("--zoom",      type=int, default=2)
+    p.add_argument("--zoom",      type=int, default=1)
     p.add_argument("--visualize", action="store_true")
     args = p.parse_args()
 
