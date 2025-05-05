@@ -115,56 +115,68 @@ def reading_order(
     *,
     use_cluster: bool = True,
     decoder: str = "count",
-    algo: str = "oro",
-    cluster_algo: str = "hdbscan",
-) -> Tuple[List[int], List[int], List[List[Tuple[int, int]]]]:
-    """
-    Parameters
-    ----------
-    img_path      : image originale (pour ORO/heatmap).
-    oro_ckpt      : checkpoint du MLP Order‑Relation Operator.
-    algo          : 'oro' (MLP) ou 'heatmap' pour l’ordre des paragraphes.
-    cluster_algo  : 'hdbscan' ou 'statistic' pour regrouper les lignes.
-
-    Returns
-    -------
-    para_order  : ordre des paragraphes (indices dans paragraph_polys)
-    line_order  : ordre global des lignes (indices dans craft_boxes)
-    paragraph_polys : polygones des paragraphes
-    """
-    # 1) Clustering des lignes
+    algo: str = "oro",          # ordre des paragraphes : 'oro' ou 'heatmap'
+    line_algo: str = "heatmap",# ordre des lignes      : 'vertical' ou 'heatmap'
+    cluster_algo: str = "statistic", # 'hdbscan' ou 'statistic'
+):
+    # 1) Regrouper les lignes en paragraphes --------------------------------
     paragraph_polys, para_to_lines = group_lines(
         craft_boxes, use_cluster, cluster_algo
     )
 
-    # 2) Ordre des paragraphes
+    # Outil pour transformer rapidement un poly (liste de tuples) en hashable
+    to_key = lambda poly: tuple(np.ravel(poly))
+
+    # 2) Ordre des paragraphes ----------------------------------------------
     if algo == "heatmap":
-        ordered_polys, _ = get_ordered_polygons(
+        ordered_polys = get_ordered_polygons(
             paragraph_polys,
             image_path=img_path,
-            sigma_x=200,
-            sigma_y=200,
-            tighten=0.9,
-            reset_thresh=0.5,
+            annotate=False,
+            final_output=None,
+            heatmaps_folder=None,
         )
-        para_order = list(range(len(ordered_polys)))
-        paragraph_polys = ordered_polys  # on garde l’ordre renvoyé
+        # convertir polygone → pid
+        poly2pid = {to_key(p): i for i, p in enumerate(paragraph_polys)}
+        para_order = [poly2pid[to_key(p)] for p in ordered_polys]
     elif algo == "oro":
         para_rects = [poly_bbox(p) for p in paragraph_polys]
         if len(para_rects) > 1:
-            img_shape = cv2.imread(img_path).shape
-            para_order = order_boxes(para_rects, img_shape, oro_ckpt, decoder)
+            H, W = cv2.imread(img_path).shape[:2]
+            para_order = order_boxes(para_rects, (H, W, 3), oro_ckpt, decoder)
         else:
             para_order = [0]
     else:
         raise ValueError("algo must be 'oro' or 'heatmap'")
 
-    # 3) Ordre des lignes à l’intérieur de chaque paragraphe
-    line_order: List[int] = []
+    # 3) Ordre des lignes dans chaque paragraphe ----------------------------
+    line_order = []
     for pid in para_order:
-        # Tri vertical par centre Y
-        idxs = sorted(para_to_lines.get(pid, []),
-                      key=lambda i: craft_boxes[i][:, 1].mean())
-        line_order.extend(idxs)
+        idxs = para_to_lines.get(pid, [])
+        if len(idxs) <= 1:
+            line_order.extend(idxs)
+            continue
+
+        if line_algo == "vertical":
+            ordered = sorted(idxs, key=lambda i: craft_boxes[i][:, 1].mean())
+
+        elif line_algo == "heatmap":
+            # polygones des lignes de ce paragraphe
+            line_polys = [craft_boxes[i].astype(int).tolist() for i in idxs]
+            ordered_polys = get_ordered_polygons(
+                line_polys,
+                image_path=img_path,
+                annotate=False,
+                final_output=None,
+                heatmaps_folder=None,
+            )
+            poly2idx = {to_key(p): i for p, i in zip(line_polys, idxs)}
+            ordered = [poly2idx[to_key(p)] for p in ordered_polys]
+
+        else:
+            raise ValueError("line_algo must be 'vertical' or 'heatmap'")
+
+        line_order.extend(ordered)
 
     return para_order, line_order, paragraph_polys
+

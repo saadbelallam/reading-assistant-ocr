@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-from src.pipeline.lines_detection_v2 import apply_craft_detection
 import os
 
 # ---------------------------------------------------------------------------
