@@ -15,7 +15,7 @@ def order_blocks(
     """
     Orders text blocks using an iterative X-Y Cut algorithm.
     """
-    print("Running blocks ordering ...")
+    print("Running blocks ordering XY ...")
     # Load the image
     image = cv2.imread(image_path)
     if image is None:
@@ -24,10 +24,10 @@ def order_blocks(
     os.makedirs(output_dir, exist_ok=True)
 
     # Convert contours to bounding boxes (x, y, w, h)
-    boxes = [cv2.boundingRect(c) for c in blocks]
+    boxes = [(block[0][0], block[0][1], block[2][0] - block[0][0], block[2][1] - block[0][1]) for block in blocks]
 
     # Order the blocks using X-Y cut
-    ordered_boxes = xy_cut_sort(image, boxes)
+    ordered_boxes, order = xy_cut_sort(image, boxes)
 
     # Generate visualization
     vis_image = visualize_xycut_order(image.copy(), ordered_boxes)
@@ -35,7 +35,7 @@ def order_blocks(
     # Save results
     cv2.imwrite(f"{output_dir}/3_ordered_blocks.jpg", vis_image)
 
-    return ordered_boxes, vis_image
+    return ordered_boxes, order
 
 
 def xy_cut_sort(image: np.ndarray, boxes: List[Tuple[int, int, int, int]], min_gap: int = 20) -> List[Tuple[int, int, int, int]]:

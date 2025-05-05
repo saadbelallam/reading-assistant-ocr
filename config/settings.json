@@ -7,11 +7,12 @@
         "enabled": true
     },
     "blocks_detection": {
-        "enabled": true
+        "enabled": true,
+        "strategy": "STAT"
     },
     "blocks_ordering": {
         "enabled": true,
-        "startegy": "TO DO"
+        "startegy": "ML"
     },
     "lines_detection": {
         "enabled": true
@@ -26,7 +27,7 @@
         "min_confidence": 40
     },
     "nlp": {
-        "enabled": true,
+        "enabled": false,
         "model_path": "models/camembert-base",
         "similarity_threshold": 0.1,
         "top_k": 100

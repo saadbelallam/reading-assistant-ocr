@@ -324,5 +324,5 @@ def export_extra_results(image, regions, output_path):
         cv2.polylines(image, [region], isClosed=True, color=(0, 255, 0), thickness=2)
     
     # Save the visualization image
-    output_path += "/4_detected_lines.png"
+    output_path += "/2_detected_lines.png"
     cv2.imwrite(output_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))

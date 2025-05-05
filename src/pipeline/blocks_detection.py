@@ -5,85 +5,92 @@
 #!/usr/bin/env python3
 # 2_blocks_detection.py
 
+"""
+Reading‑order utilities 
+---------------------------
+• cluster_algo = 'hdbscan' (original) ou 'statistic'
+• ordre de lecture via MLP ORO ou heatmap
+"""
+
+from collections import defaultdict
+from typing import List, Tuple
+
 import cv2
 import numpy as np
-import os
-import argparse
 
-def detect_text_blocks_rlsa(image_path: str, output_dir: str = "tests/results/") -> list:
+# --- Clustering HDBSCAN -----------------------------------------
+from utils.clustering import (
+    convert_craft_boxes_to_rects,
+    cluster_bounding_boxes_hdbscan,
+    calculate_cluster_polygons,
+    plot_cluster_polygons
+)
+
+# --- Clustering statistique --------------------------------
+from utils.statistical_clustering import (
+    hybrid_blocks_detection,      # -> (cluster_boxes, line2cid)
+)
+
+
+
+# ---------------------------------------------------------------------------
+# 1. Regroupement des lignes en paragraphes avec statistical_learning
+# ---------------------------------------------------------------------------
+
+
+def detect_text_blocks_stat(image_path, result_path, craft_boxes, visualize=False):
     """
-    Detect text blocks using morphological closing (RLSA-inspired method) with adaptive kernel sizing.
-
-    Args:
-        image_path (str): Path to the input image.
-        output_dir (str): Directory to save visualization image.
-
-    Returns:
-        list: List of detected block contours.
+    Retourne
+    --------
+    paragraph_polys : liste de polygones de paragraphes
+    para_to_lines   : dict {pid: [indices lignes]}
     """
-    print("Running texts region detection ...")
-    # Create output directory if needed
-    os.makedirs(output_dir, exist_ok=True)
+    print("Running text blocks STAT ...")
+    cluster_boxes, line2cid = hybrid_blocks_detection(craft_boxes, visualize, img_path=image_path,save_dir=result_path)
+    # Polygone = rectangle du cluster.
+    paragraph_polys = [
+        [
+            (int(x), int(y)),
+            (int(x + w), int(y)),
+            (int(x + w), int(y + h)),
+            (int(x), int(y + h)),
+        ]
+        for x, y, w, h in cluster_boxes
+    ]
+    # Conversion mapping -> dict para_to_lines
+    para_to_lines = defaultdict(list)
+    for idx, cid in enumerate(line2cid):
+        if cid >= 0:
+            para_to_lines[cid].append(idx)
+    return paragraph_polys, para_to_lines
 
-    # Load image and create a copy for visualization
-    image = cv2.imread(image_path)
-    if image is None:
-        print("Error: Image not found or cannot be loaded!")
-        return []
-    orig = image.copy()
 
-    # Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Binarize the image using Otsu's threshold (invert so text is white)
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+def detect_text_blocks_hdbscan(image_path, result_path, craft_boxes, visualize=False):
+    """
+    Retourne
+    --------
+    paragraph_polys : liste de polygones de paragraphes
+    para_to_lines   : dict {pid: [indices lignes]}
+    """
+    print("Running text blocks HDSCAN ...")
+    rects = convert_craft_boxes_to_rects(craft_boxes)
+    _, labels, _ = cluster_bounding_boxes_hdbscan(rects)
+    method = "bounding_box"  # ou "convex"
+    cluster_polys = calculate_cluster_polygons(rects, labels, method=method)
+    paragraph_polys, para_to_lines = [], defaultdict(list)
+    for cid, poly in cluster_polys.items():
+        pid = len(paragraph_polys)
+        if isinstance(poly, list):  # méthode bounding_box : liste de 4 points
+            paragraph_polys.append([(int(x), int(y)) for x, y in poly])
+        else:  # méthode convex : shapely Polygon
+            paragraph_polys.append(
+                [(int(x), int(y)) for x, y in poly.exterior.coords]
+            )
+        for idx, lbl in enumerate(labels):
+            if lbl == cid:
+                para_to_lines[pid].append(idx)
+    return paragraph_polys, para_to_lines
 
-    # Get image dimensions
-    height, width = gray.shape[:2]
 
-    # Adaptive kernel sizes and minimum area based on image size
-    vertical_kernel_size = max(1, height // 50)  # ~2% of image height
-    horizontal_kernel_size = max(1, width // 50)  # ~2% of image width
-    min_area = (height * width) // 500  # ~0.2% of total image area
 
-    # print(f"Using kernel sizes: Vertical={vertical_kernel_size}, Horizontal={horizontal_kernel_size}")
-    # print(f"Minimum area threshold: {min_area}")
-
-    # Apply vertical closing to merge lines
-    vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_kernel_size))
-    closed_vertical = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, vertical_kernel, iterations=1)
-
-    # Apply horizontal closing to merge words into blocks
-    horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontal_kernel_size, 1))
-    closed = cv2.morphologyEx(closed_vertical, cv2.MORPH_CLOSE, horizontal_kernel, iterations=1)
-
-    # Dilate slightly to smooth regions
-    dilation_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    processed = cv2.dilate(closed, dilation_kernel, iterations=1)
-
-    # Find contours
-    contours, _ = cv2.findContours(processed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Filter contours by area and return them
-    detected_blocks = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area]
-
-    # Generate visualization
-    vis = orig.copy()
-    for cnt in detected_blocks:
-        x, y, w, h = cv2.boundingRect(cnt)
-        cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-    # Save visualization with dynamic naming
-    vis_path = os.path.join(output_dir, f"2_detected_blocks.png")
-    cv2.imwrite(vis_path, vis)
-    #print(f"Detected {len(detected_blocks)} text blocks. Visualization saved to '{vis_path}'.")
-
-    return detected_blocks
-
-#if __name__ == "__main__":
-#    parser = argparse.ArgumentParser(description="Detect text blocks using an adaptive RLSA-inspired method.")
-#    parser.add_argument("--image", type=str, required=True, help="Path to the input image.")
-#    parser.add_argument("--output", type=str, default="tests/results/", help="Directory to save results.")
-#
-#    args = parser.parse_args()
-#    blocks = detect_text_blocks_rlsa(args.image, args.output)

@@ -1,5 +1,11 @@
 # Ignore tests folder completely
 tests/**
+*.png
+*.jpg
+*.jpeg
+
+# Ignore history files
+.history/**
 
 # Python cache files
 __pycache__/

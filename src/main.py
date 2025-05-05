@@ -6,8 +6,10 @@ import shutil
 import json
 
 from pipeline.geometric_correction import scan_document
-from pipeline.blocks_detection import detect_text_blocks_rlsa
-from pipeline.blocks_ordering import order_blocks
+from pipeline.blocks_detection import detect_text_blocks_stat
+from pipeline.blocks_detection import detect_text_blocks_hdbscan
+from pipeline.blocks_ordering_XY import order_blocks
+from pipeline.blocks_ordering_ML import reading_order_blocks
 from pipeline.lines_detection import detect_lines
 from pipeline.ocr import extract_text
 from pipeline.nlp import correct_text
@@ -65,28 +67,35 @@ def main():
             image_path = scan_document(image_path, result_path)
             timing_report["Geometric Correction"] = time.time() - start_geo
 
-        # 2. Block detection – store intermediate results in result_path
-        if config["blocks_detection"].get("enabled", False):
-            start_block_detect = time.time()
-            blocks = detect_text_blocks_rlsa(image_path, result_path)
-            timing_report["Block Detection"] = time.time() - start_block_detect
-
-        # 3. Blocks ordering – also store ordering visualization in result_path
-        if config["blocks_ordering"].get("enabled", False):
-            start_block_order = time.time()
-            ordered_blocks, _ = order_blocks(image_path, blocks, result_path)
-            timing_report["Block Ordering"] = time.time() - start_block_order
-
-        # 4. Lines detection using Craft
+        # 2. Lines detection using Craft
         if config["lines_detection"].get("enabled", False):
             start_lines_detect = time.time()
-            lines = detect_lines(image_path, result_path, ordered_blocks)
+            lines = detect_lines(image_path, result_path)
             timing_report["Lines Detection"] = time.time() - start_lines_detect
+
+        # 3. Block detection – store intermediate results in result_path
+        if config["blocks_detection"].get("enabled", False):
+            start_block_detect = time.time()
+            if config["blocks_detection"].get("strategy", "STAT") == "STAT":
+                blocks, lines_corr = detect_text_blocks_stat(image_path, result_path, lines, visualize=True)
+            elif config["blocks_detection"].get("strategy", "STAT") == "HDBSCAN":
+                blocks, lines_corr = detect_text_blocks_hdbscan(image_path, result_path, lines, visualize=True)
+                print(blocks)
+            timing_report["Block Detection"] = time.time() - start_block_detect
+
+        # 4. Blocks ordering
+        if config["blocks_ordering"].get("enabled", False):
+            start_block_order = time.time()
+            if config["blocks_ordering"].get("startegy", "ML") == "ML":
+                ordered_blocks, order = reading_order_blocks(image_path, blocks, result_path)
+            else:
+                ordered_blocks, order = order_blocks(image_path, blocks, result_path)
+            timing_report["Block Ordering"] = time.time() - start_block_order
 
         # 5. OCR processing – extract text using ordered lines
         if config["ocr"].get("enabled", False):
             start_ocr = time.time()
-            text, masks = extract_text(image_path, result_path, lines, config["ocr"])
+            text, masks = extract_text(image_path, result_path, order, lines, lines_corr, config["ocr"])
             timing_report["OCR Processing"] = time.time() - start_ocr
 
         # 6. NLP text correction – correct the OCR text
