@@ -8,12 +8,19 @@ IMAGE_DIR = tests/images
 export PYTHONPATH := $(PYTHONPATH):$(CURDIR)
 # Install all dependencies
 install:
-	@echo "\n📦 Installing dependencies from requirements.txt..."
-	@pip install -r requirements.txt
+	@echo "Exécution du script d'installation (setup.sh)..."
+	@chmod +x setup.sh && ./setup.sh
+
+# Supprimer tout ce qui a été généré
+delete:
+	@echo "Suppression de l'environnement et des modèles"
+	rm -rf .venv/
+	rm -rf models/camembert-base/
+	@echo "Tout a été nettoyé."
 
 # Process a single image (pass 'image=<path>' and optional 'time=true')
 process-image:
-	@echo "\n🚀 Processing image: $(image)"
+	@echo "\n Processing image: $(image)"
 	@if [ "$(time)" = "true" ]; then TIMING_FLAG=-t; else TIMING_FLAG=; fi; \
 	python3 src/main.py --input $(image) --output-dir $(RESULT_DIR) $$TIMING_FLAG 
 
@@ -21,7 +28,7 @@ process-image:
 process-all:
 	@echo "\n🔍 Processing all images in $(IMAGE_DIR):"
 	@find $(IMAGE_DIR) -type f \( -iname '*.jpg' -o -iname '*.png' \) | while read file; do \
-	    echo "\n📂 Processing $$file"; \
+	    echo "\n Processing $$file"; \
 	    if [ "$(time)" = "true" ]; then TIMING_FLAG=-t; else TIMING_FLAG=; fi; \
 	    python3 src/main.py --input $$file --output-dir $(RESULT_DIR) $$TIMING_FLAG; \
 	done
@@ -36,25 +43,25 @@ evaluate:
 
 # Evaluate all images in tests/images
 evaluate-all:
-	@echo "\n🔍 Evaluating all results in $(RESULT_DIR):"
+	@echo "\n Evaluating all results in $(RESULT_DIR):"
 	@python3 src/utils/metrics_evaluation_folder.py $(RESULT_DIR)
 
 MAKEFLAGS += --no-print-directory
 
 # Capture image from webcam and process it
 webcam:
-	@echo "\n📷 Starting webcam capture..."
+	@echo "\n Starting webcam capture..."
 	@python3 src/utils/webcam_capture.py $(IMAGE_DIR)
 	@if [ -n "$$(ls -t $(IMAGE_DIR)/webcam/*.jpg 2>/dev/null | head -1)" ]; then \
 	    latest_image=$$(ls -t $(IMAGE_DIR)/webcam/*.jpg | head -1); \
 	    make process-image image=$$latest_image; \
 	else \
-	    @echo "\n❌ No webcam images found to process."; \
+	    @echo "\n No webcam images found to process."; \
 	fi
 
 # Clean generated results
 clean:
-	@echo "\n🧹 Cleaning up generated results in $(RESULT_DIR)/**"
+	@echo "\n Cleaning up generated results in $(RESULT_DIR)/**"
 	@rm -rf $(RESULT_DIR)
 
 # Help target

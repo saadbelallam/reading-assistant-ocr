@@ -21,3 +21,12 @@ venv/
 
 # Local model files
 models/camembert-base/
+
+# Environnement virtuel
+.venv/
+
+# Caches UV
+uv.lock
+.cache/
+.mypy_cache/
+.pytest_cache/

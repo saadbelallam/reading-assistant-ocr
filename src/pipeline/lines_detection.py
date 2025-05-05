@@ -52,7 +52,7 @@ def apply_craft_detection(image_path):
         craft_net=craft_net,
         refine_net=refine_net,
         text_threshold=0.7,
-        link_threshold=0.75,
+        link_threshold=0.7,
         low_text=0.4,
         cuda=use_cuda,
         long_size=1280,

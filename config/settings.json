@@ -4,7 +4,7 @@
         "output_dir": "results"
     },
     "geometric_correction": {
-        "enabled": false
+        "enabled": true
     },
     "blocks_detection": {
         "enabled": true,
@@ -19,6 +19,8 @@
     },
     "ocr": {
         "enabled": true,
+        "ocr":"pytesseract",
+        "gpu": false,
         "lang": "fra",
         "psm": 7,
         "oem": 1,
@@ -32,5 +34,11 @@
     },
     "audio_generation": {
         "enabled": false
+    },
+    "ordering": {
+        "use_cluster": true,
+        "algo_cluster": "statistic",
+        "algo_ordering": "heatmap",       
+        "oro_decoder": "count"       
     }
 }
