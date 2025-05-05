@@ -95,13 +95,13 @@ def held_karp_decoder(P):
 
 def reading_order_blocks(
     image_path: str,  
-    blocks: List[np.ndarray],  
+    blocks: List[List[Tuple[int, int]]],  
     output_dir: str = "tests/results"
 ) -> Tuple[List[Tuple[int, int, int, int]], np.ndarray]:
     """
     Orders text blocks using an iterative X-Y Cut algorithm.
     """
-    print("Running blocks ordering ...")
+    print("Running blocks ordering ML ...")
     # Load the image
     image = cv2.imread(image_path)
     if image is None:
@@ -110,8 +110,8 @@ def reading_order_blocks(
     os.makedirs(output_dir, exist_ok=True)
 
     # Convert contours to bounding boxes (x, y, w, h)
-    boxes = [cv2.boundingRect(c) for c in blocks]
-
+    boxes = [(block[0][0], block[0][1], block[2][0] - block[0][0], block[2][1] - block[0][1]) for block in blocks]
+    
     # Store image dimensions for normalization
     img_h, img_w = image.shape[:2]
 
@@ -141,4 +141,4 @@ def reading_order_blocks(
     # Save results
     cv2.imwrite(f"{output_dir}/3_ordered_blocks.jpg", vis_image)
 
-    return ordered_boxes, vis_image
+    return ordered_boxes, order

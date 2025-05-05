@@ -7,17 +7,18 @@
         "enabled": false
     },
     "blocks_detection": {
-        "enabled": true
+        "enabled": true,
+        "strategy": "STAT"
     },
     "blocks_ordering": {
         "enabled": true,
         "startegy": "ML"
     },
     "lines_detection": {
-        "enabled": false
+        "enabled": true
     },
     "ocr": {
-        "enabled": false,
+        "enabled": true,
         "lang": "fra",
         "psm": 7,
         "oem": 1,

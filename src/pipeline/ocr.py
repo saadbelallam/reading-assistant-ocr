@@ -13,12 +13,13 @@ def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray,
     Process a single text line, masking unrecognized words while preserving line structure
     """
     # Crop region coordinates
+    region = np.array(region)
     x_coords = region[:, 0]
     y_coords = region[:, 1]
     x1, x2 = int(np.min(x_coords)), int(np.max(x_coords))
     y1, y2 = int(np.min(y_coords)), int(np.max(y_coords))
     cropped = preprocessed_image[y1:y2, x1:x2]
-    
+
     if cropped.size == 0:
         return ""
     
@@ -52,21 +53,26 @@ def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray,
         
     return ' '.join(processed_line)
 
-def extract_text(image_path: str, output_dir: str, ordered_lines: List[np.ndarray], ocr_config: dict) -> str:
+def extract_text(image_path: str, output_dir: str, order: List, lines: List, lines_corr: dict, ocr_config: dict) -> str:
     print("Running OCR ...")
     masks = []
     image = cv2.imread(image_path)
     if image is None:
         raise FileNotFoundError(f"Image not found at {image_path}")
 
-    # Preprocess ONCE for all regions
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, preprocessed = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    ordered_lines = []
+    for i in range(len(order)):
+        idx = order[i]
+        lines_indices = lines_corr[idx]
+        lines_ = [lines[i] for i in lines_indices]
+        sorted_lines = sorted(lines_, key=lambda box: box[:, 1].mean())
+        ordered_lines+=sorted_lines
+    print(len(ordered_lines))
 
     # Batch processing to reduce per-call overhead
     full_text = []
     for region in ordered_lines:
-        text = extract_text_from_region(preprocessed, region, masks, ocr_config)
+        text = extract_text_from_region(image, region, masks, ocr_config)
         full_text.append(text)
 
     # Save results
