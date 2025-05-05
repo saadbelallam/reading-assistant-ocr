@@ -27,16 +27,4 @@ dependencies = [
   "mmcv-full==1.7.1",
   "Pillow==9.4.0",
   "Levenshtein",
-
- # --------------- ORO additions ---------------
-  "scikit-learn>=1.3",           
-  "pillow",                       
-  "tqdm",
-  "lxml",
-  "networkx",
-
-  #-------------- easy ocr------------
-  "python-bidi==0.4.2",     
-  "easyocr",
 ]
-

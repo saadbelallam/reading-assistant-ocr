@@ -66,7 +66,7 @@ def correct_text(text: str, masks: list, output_dir: str, nlp_config: dict) -> s
     """
     Remplace les <mask> dans le texte par les meilleures prédictions du modèle.
     """
-    print("⏳ Traitement NLP ...")
+    print(" Traitement NLP ...")
     model_dir = nlp_config["model_path"]
     similarity_threshold = nlp_config["similarity_threshold"]
     top_k = nlp_config["top_k"]

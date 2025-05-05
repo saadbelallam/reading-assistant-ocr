@@ -28,22 +28,6 @@ source "$VENV_DIR/bin/activate"
 echo "Installation des dépendances..."
 uv sync
 
-#Vérifie si le modèle est déjà présent
-if [ ! -f "$MODEL_DIR/config.json" ]; then
-  echo ""
-  echo "Le modèle Camembert n'est pas encore téléchargé."
-  echo "Ce téléchargement va prendre environ 550 Mo."
-  read -p "Souhaitez-vous télécharger le modèle maintenant ? (y/n) " confirm
-  if [[ "$confirm" =~ ^[Yy]$ ]]; then
-    echo "Téléchargement du modèle Camembert..."
-    python download.py
-  else
-    echo "Téléchargement du modèle annulé. Certaines fonctionnalités NLP ne seront pas disponibles tant qu’il n’est pas téléchargé."
-  fi
-else
-  echo "Modèle Camembert déjà présent."
-fi
-
 echo ""
 echo "Installation terminée avec succès."
 echo "Pour activer l'environnement virtuel : source $VENV_DIR/bin/activate"

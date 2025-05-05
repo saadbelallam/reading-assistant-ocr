@@ -15,7 +15,6 @@ install:
 delete:
 	@echo "Suppression de l'environnement et des modèles"
 	rm -rf .venv/
-	rm -rf models/camembert-base/
 	@echo "Tout a été nettoyé."
 
 # Process a single image (pass 'image=<path>' and optional 'time=true')
