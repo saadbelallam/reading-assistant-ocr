@@ -29,8 +29,6 @@ def load_reading_order_model(path="models/reading_order/best_model.pt"):
 
 model = load_reading_order_model()
 
-
-
 # Predict full matrix of p(bi → bj)
 def predict_parent_matrix(blocks):
     n = len(blocks)
@@ -93,6 +91,12 @@ def held_karp_decoder(P):
     path.reverse()
     return path
 
+def decode_ranking(matrix):
+    scores = matrix.sum(axis=1)  # score for each block
+    order = np.argsort(-scores)  # higher score = earlier in reading order
+    return order.tolist()
+
+
 def reading_order_blocks(
     image_path: str,  
     blocks: List[List[Tuple[int, int]]],  
@@ -129,10 +133,9 @@ def reading_order_blocks(
 
     # Order the blocks using X-Y cut
     P = predict_parent_matrix(normalized_boxes)
-
+    
     # Decode using Held-Karp algorithm
-    order = held_karp_decoder(P)
-
+    order = decode_ranking(P)
     # Reorder boxes based on the predicted order
     ordered_boxes = [boxes[i] for i in order]
     # Generate visualization
