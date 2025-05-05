@@ -122,12 +122,7 @@ def pdf_to_readingbank_surya_ocr(pdf_dir=RAW_PDF_DIR,
                     # continue
                 # crop & OCR text
                 x0,y0,x1,y1 = [int(c) for c in b.bbox]
-                crop = img.crop((x0,y0,x1,y1))
-                text = pytesseract.image_to_string(crop, lang='fra', config=TESSERACT_CONFIG).strip()
-                if not text or not is_normal_text(text):
-                    continue
                 raw_blocks.append({
-                    'text': text,
                     'bbox_px': [x0,y0,x1,y1],
                 })
 
@@ -157,7 +152,6 @@ def pdf_to_readingbank_surya_ocr(pdf_dir=RAW_PDF_DIR,
                         [w_pt, h_pt]
                     )
                     page_entry['blocks'].append({
-                        'text': blk['text'],
                         'bbox': nb
                     })
                 entries.append(page_entry)

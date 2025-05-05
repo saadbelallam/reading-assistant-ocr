@@ -15,7 +15,7 @@ install:
 process-image:
 	@echo "\n🚀 Processing image: $(image)"
 	@if [ "$(time)" = "true" ]; then TIMING_FLAG=-t; else TIMING_FLAG=; fi; \
-	python3 src/main.py --input $(image) --output-dir $(RESULT_DIR) $$TIMING_FLAG
+	python3 src/main.py --input $(image) --output-dir $(RESULT_DIR) $$TIMING_FLAG 
 
 # Process all images in tests/images (organized by category)
 process-all:

@@ -1,21 +1,7 @@
 import json
-import torch
-from transformers import BertTokenizer, BertModel
+
 
 def transform(input_path, output_path):
-    # Initialize BERT
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    model = BertModel.from_pretrained('bert-base-uncased').to(device)
-    model.eval()
-
-    def get_embedding(text):
-        with torch.no_grad():
-            inputs = tokenizer(text, return_tensors="pt", 
-                             truncation=True, padding="max_length", 
-                             max_length=32).to(device)
-            return model(**inputs).last_hidden_state[0, 0].cpu().numpy().tolist()
-
     with open(input_path, 'r') as f:
         data = json.load(f)
 
@@ -33,13 +19,11 @@ def transform(input_path, output_path):
                         y0 ,  # y
                         (x1 - x0) ,  # width
                         (y1 - y0)    # height
-                    ],
-                    "embedding": get_embedding(block['text'])
+                    ]
                 }
                 out_f.write(json.dumps({
                     "id": item_id,
-                    "box": items[item_id]["box"],
-                    "embedding": items[item_id]["embedding"]
+                    "box": items[item_id]["box"]
                 }) + '\n')
 
         # Second pass: write all pairs
@@ -53,8 +37,6 @@ def transform(input_path, output_path):
                     out_f.write(json.dumps({
                         "box1": str(current_offset + i),
                         "box2": str(current_offset + j),
-                        "cls1": str(current_offset + i),
-                        "cls2": str(current_offset + j),
                         "label": 1 if j > i else 0
                     }) + '\n')
             current_offset += n

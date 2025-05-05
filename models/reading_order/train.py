@@ -25,22 +25,11 @@ def train():
     dataset_path = "data/processed/processed.jsonl"
     full_dataset = ReadingOrderDataset(dataset_path)
 
-    train_split = int(0.8 * len(full_dataset))
-    val_split = int(0.1 * len(full_dataset))
+    train_split = int(0.7 * len(full_dataset))
+    val_split = int(0.2 * len(full_dataset))
     test_split = len(full_dataset) - train_split - val_split
 
     train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_split, val_split, test_split])
-    
-# # ...existing code...
-#     # Calculate class weights based on the imbalance in the training set
-#     train_labels = [int(sample['label']) for sample in train_dataset]
-#     class_counts = torch.bincount(torch.tensor(train_labels, dtype=torch.long))
-#     class_weights = 1.0 / class_counts.float()
-#     sample_weights = class_weights[torch.tensor(train_labels, dtype=torch.long)]
-# # ...existing code...
-    
-#     # Create WeightedRandomSampler for the training dataset
-#     sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -63,12 +52,10 @@ def train():
         for batch in train_loader:
             coords_i = batch['box1'].to(device)
             coords_j = batch['box2'].to(device)
-            cls_1 = batch['cls1'].to(device)
-            cls_2 = batch['cls2'].to(device)
             labels = batch['label'].to(device)
             
             optimizer.zero_grad()
-            outputs = model(coords_i, coords_j, cls_1, cls_2)
+            outputs = model(coords_i, coords_j)
             loss = weighted_bce_loss(outputs.squeeze(), labels, pos_weight=pos_weight)
             loss.backward()
             optimizer.step()
@@ -84,11 +71,9 @@ def train():
             for batch in val_loader:
                 coords_i = batch['box1'].to(device)
                 coords_j = batch['box2'].to(device)
-                cls_1 = batch['cls1'].to(device)
-                cls_2 = batch['cls2'].to(device)
                 labels = batch['label'].to(device)
 
-                outputs = model(coords_i, coords_j, cls_1, cls_2)
+                outputs = model(coords_i, coords_j)
                 loss = weighted_bce_loss(outputs, labels, pos_weight=pos_weight)
                 val_loss += loss.item()
 
@@ -114,11 +99,9 @@ def train():
         for batch in test_loader:
             coords_i = batch['box1'].to(device)
             coords_j = batch['box2'].to(device)
-            cls_1 = batch['cls1'].to(device)
-            cls_2 = batch['cls2'].to(device)
             labels = batch['label'].to(device)
 
-            outputs = model(coords_i, coords_j, cls_1, cls_2)
+            outputs = model(coords_i, coords_j)
             loss = weighted_bce_loss(outputs.squeeze(), labels, pos_weight=pos_weight)
             test_loss += loss.item()
 
