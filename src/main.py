@@ -5,7 +5,7 @@ import time
 import shutil
 import json
 
-from pipeline.geometric_correction import scan_document
+from pipeline.geometric_correction import geometric_correction
 from pipeline.blocks_detection import detect_text_blocks_stat
 from pipeline.blocks_detection import detect_text_blocks_hdbscan
 from pipeline.blocks_ordering_XY import order_blocks
@@ -64,7 +64,7 @@ def main():
         # 1. Geometric correction
         if config["geometric_correction"].get("enabled", False):
             start_geo = time.time()
-            image_path = scan_document(image_path, result_path)
+            image_path = geometric_correction(image_path, result_path)
             timing_report["Geometric Correction"] = time.time() - start_geo
 
         # 2. Lines detection using Craft

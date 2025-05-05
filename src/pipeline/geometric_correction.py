@@ -3,8 +3,8 @@
 ################
 
 import os
-from src.pipeline.statistical_clustering import hybrid_blocks_detection
-from src.pipeline.lines_detection_v2 import apply_craft_detection
+from src.utils.statistical_clustering import hybrid_blocks_detection_2
+from src.pipeline.lines_detection import apply_craft_detection
 from models.Document_Image_Dewarping.predict import dewarp_image
 
 from deskew import determine_skew
@@ -17,8 +17,8 @@ from skimage.transform import rotate
 
 def text_zones(input_image_path, output_dir) :
     print(f"Traitement de l'image : {input_image_path}")
-    quads = apply_craft_detection(input_image_path, output_dir="outputs")["boxes"]
-    clusters = hybrid_blocks_detection(quads, output_dir, prox_thr=1.0, overlap_thr=0.75,
+    quads = apply_craft_detection(input_image_path)["boxes"]
+    clusters = hybrid_blocks_detection_2(quads, output_dir, prox_thr=1.0, overlap_thr=0.75,
                                 visualize=True, img_path=input_image_path)
 
 def deskew(input_image_path, output_dir) :
