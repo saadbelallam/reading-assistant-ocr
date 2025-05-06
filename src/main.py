@@ -73,6 +73,10 @@ def main():
             lines = detect_lines(image_path, result_path)
             timing_report["Lines Detection"] = time.time() - start_lines_detect
 
+        # si blocks_detection est désactivé on crée un mapping 1‑à‑1
+        if not config["blocks_detection"].get("enabled", False):
+            lines_corr = {idx: [idx] for idx in range(len(lines))}
+
         # 3. Block detection – store intermediate results in result_path
         if config["blocks_detection"].get("enabled", False):
             start_block_detect = time.time()
@@ -83,6 +87,12 @@ def main():
                 print(blocks)
             timing_report["Block Detection"] = time.time() - start_block_detect
 
+
+        # si blocks_ordering est désactivé 
+        if not config["blocks_detection"].get("enabled", False):
+            blocks = lines
+            print("salim")
+            print(blocks)
         # 4. Blocks ordering
         if config["blocks_ordering"].get("enabled", False):
             start_block_order = time.time()

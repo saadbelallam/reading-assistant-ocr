@@ -114,8 +114,7 @@ def reading_order_blocks(
     os.makedirs(output_dir, exist_ok=True)
 
     # Convert contours to bounding boxes (x, y, w, h)
-    boxes = [(block[0][0], block[0][1], block[2][0] - block[0][0], block[2][1] - block[0][1]) for block in blocks]
-    
+    boxes = [(int(block[0][0]), int(block[0][1]), int(block[2][0] - block[0][0]), int(block[2][1] - block[0][1])) for block in blocks]
     # Store image dimensions for normalization
     img_h, img_w = image.shape[:2]
 
