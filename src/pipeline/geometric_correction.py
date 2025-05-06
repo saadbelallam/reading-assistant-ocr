@@ -34,7 +34,7 @@ def deskew(input_image_path, output_dir) :
     if not os.path.exists(output_dir) :
         os.makedirs(output_dir)
     # save the rotated image
-    io.imsave(f"{output_dir}/2_deskewed.png", rotated.astype(np.uint8))
+    io.imsave(f"{output_dir}/1_deskewed.png", rotated.astype(np.uint8))
 
 
 
@@ -50,8 +50,8 @@ def geometric_correction(input_image_path, output_dir) :
     deskew(input_image_path, output_dir)
     
     # # Step 3: Geometric correction
-    input_image_path = os.path.join(output_dir, "2_deskewed.png")
-    output_dir = output_dir + "/3_dewarped.png"
+    input_image_path = os.path.join(output_dir, "1_deskewed.png")
+    output_dir = output_dir + "/1_dewarped.png"
     dewarp_image(input_image_path, output_dir)
 
     return output_dir
