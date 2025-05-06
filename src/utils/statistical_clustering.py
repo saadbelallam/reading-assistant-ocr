@@ -32,18 +32,22 @@ def boxes_from_clusters(boxes, clusters):
 # ---------------------------------------------------------------------------
 
 def overlap(a, b):
+    """
+    Calcule l'aire de l'intersection entre deux boîtes
+    """
     x1, y1, w1, h1 = a
     x2, y2, w2, h2 = b
-    ix1, iy1 = max(x1, x2), max(y1, y2)
-    ix2, iy2 = min(x1 + w1, x2 + w2), min(y1 + h1, y2 + h2)
-    iw, ih = max(0, ix2 - ix1), max(0, iy2 - iy1)
-    return iw * ih
+    ix1, iy1 = max(x1, x2), max(y1, y2) # coin haut et gauche de l’intersection
+    ix2, iy2 = min(x1 + w1, x2 + w2), min(y1 + h1, y2 + h2) # coin bas et droit de l’intersection
+    iw, ih = max(0, ix2 - ix1), max(0, iy2 - iy1)  # largeur et hauteur de l’intersection
+    return iw * ih  # aire de l’intersection
 
 
 def contains(box1, box2, overlap_threshold=0.75):
     """
-    Check if box1 is partially contained in box2 based on overlap area.
-    overlap_threshold: minimum ratio of box1's area that must overlap with box2
+    Teste si l'une des deux boîtes est largement incluse dans l'autre,
+    pour éviter la fusion deux paragraphes se touchent légèrement par exemple
+    overlap_threshold: ratio minimum de l'aire de box1 qui doit chevaucher box2
     """
     # Calculate areas
     area1 = box1[2] * box1[3]
@@ -65,6 +69,11 @@ def median_height(boxes):
 
 
 def ned(b1, b2, mh):
+    """
+    La distance euclidienne est normalisée par la hauteur médiane des boîtes
+    pour éviter que la distance ne soit trop influencée par la taille des boîtes
+
+    """
     x1, y1, w1, h1 = b1
     x2, y2, w2, h2 = b2
     dx = max(0, max(x1, x2) - min(x1 + w1, x2 + w2))
@@ -73,6 +82,13 @@ def ned(b1, b2, mh):
 
 
 def cluster_edge(boxes, thr):
+    """
+    Un clustering basé sur la distance euclidienne normalisée par la hauteur médiane
+    des boîtes.
+    Cette fonction regroupe les boîtes qui sont suffisamment proches les unes des autres
+    en utilisant une approche de recherche en profondeur (DFS).
+
+    """
     mh = median_height(boxes)
     N = len(boxes)
     seen = [False] * N
@@ -90,12 +106,36 @@ def cluster_edge(boxes, thr):
             clusters.append(cur)
     return clusters
 
+"""
+Après ce premier clustering, on a parfois des regroupements trop larges:
 
+    - des paragraphes collés fusionnent,
+    - des titres + leur paragraphe sont englobés,
+    - la densité de lignes varie d'une zone à l'autre.
+
+L'idée est donc de raffiner ce premier clustering en travaillant localement,
+on applique ce raffinage (voir étape2) à l'intérieur de chaque gros cluster issu de l'étape 1.
+
+"""
 # ---------------------------------------------------------------------------
 # 4. Stage 2 – dynamic thresholds
 # ---------------------------------------------------------------------------
 
 def dyn_muls(boxes):
+    """
+    Calcule deux multiplicateurs adaptatifs (vm, hm)
+
+    - vm: tolérance verticale (multiple de la *plus petite* hauteur)
+    - hm: tolérance horizontale (multiple de la *plus petite* largeur)
+
+    Formules:
+        vm = a + IQR_h / median_h
+        hm = (2 - a) * IQR_w / median_w
+    avec a = 1.75` afin de privilégier le vertical (1.75vs0.25)
+    IQR_h = 75th percentile - 25th percentile de la hauteur
+    IQR_w = 75th percentile - 25th percentile de la largeur
+
+    """
     h = np.array([b[3] for b in boxes])
     w = np.array([b[2] for b in boxes])
     med_h, med_w = np.median(h), np.median(w)
@@ -106,6 +146,16 @@ def dyn_muls(boxes):
 
 
 def close_dyn(b1, b2, vm, hm):
+    """
+    Décide si deux boîtes sont voisines selon les seuils dynamiques.
+
+    On compare les centres:
+        |Δy| ≤ vm * min(h1, h2)
+        |Δx| ≤ hm * min(w1, w2)
+    Les deux conditions doivent être vraies pour que les boîtes soient
+    considérées connectées.
+
+    """
     x1, y1, w1, h1 = b1
     x2, y2, w2, h2 = b2
     return (abs((y1 + h1/2) - (y2 + h2/2)) <= vm * min(h1, h2)
@@ -135,6 +185,9 @@ def cluster_dynamic(sub_boxes):
 # ---------------------------------------------------------------------------
 
 def merge_inclusions(boxes, clusters, thr=0.75):
+    """
+    Fusionne les clusters qui s'emboîtent
+    """
     changed = True
     while changed:
         changed = False
