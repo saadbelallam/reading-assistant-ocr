@@ -33,7 +33,7 @@ def order_blocks(
     vis_image = visualize_xycut_order(image.copy(), ordered_boxes)
 
     # Save results
-    cv2.imwrite(f"{output_dir}/3_ordered_blocks.jpg", vis_image)
+    cv2.imwrite(f"{output_dir}/4_ordered_blocks.jpg", vis_image)
 
     return ordered_boxes, order
 
