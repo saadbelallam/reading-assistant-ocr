@@ -56,7 +56,7 @@ def predict_single_image(img_path, output_path=None,
         state_dict = torch.load(model_path, map_location=device)
         recti_model.load_state_dict(state_dict)
         recti_model = recti_model.to(device)
-        print(f'Model loaded from {model_path}')
+        #print(f'Model loaded from {model_path}')
     except Exception as e:
         raise RuntimeError(f'Failed to load model: {e}')
     
@@ -94,8 +94,8 @@ def predict_single_image(img_path, output_path=None,
     cv2.imwrite(output_path, img_geo[:, :, ::-1])  # save
     
     total_time = time.time() - start_time
-    print(f"Image processed in {inference_time:.3f}s (total: {total_time:.3f}s)")
-    print(f"Dewarped image saved to: {output_path}")
+    #print(f"Image processed in {inference_time:.3f}s (total: {total_time:.3f}s)")
+    #print(f"Dewarped image saved to: {output_path}")
     
     return img_geo, inference_time
 

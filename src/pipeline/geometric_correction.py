@@ -16,7 +16,7 @@ from skimage.transform import rotate
 
 
 def text_zones(input_image_path, output_dir) :
-    print(f"Traitement de l'image : {input_image_path}")
+    #print(f"Traitement de l'image : {input_image_path}")
     quads = apply_craft_detection(input_image_path)["boxes"]
     clusters = hybrid_blocks_detection_2(quads, output_dir, prox_thr=1.0, overlap_thr=0.75,
                                 visualize=True, img_path=input_image_path)
@@ -39,6 +39,7 @@ def deskew(input_image_path, output_dir) :
 
 
 def geometric_correction(input_image_path, output_dir) :
+    print("Running geometric correction ...")
     # Step 1: Detect text zones
     text_zones(input_image_path, output_dir)
 

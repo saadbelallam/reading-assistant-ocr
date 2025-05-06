@@ -452,7 +452,7 @@ def hybrid_blocks_detection_2(quads, save_dir=None, prox_thr=1.0, overlap_thr=0.
         
         # Save the clusters-only image with black background
         clusters_only_path = os.path.join(save_dir, f"1_text_zones.png")
-        print(f"Saving black background clusters image to {clusters_only_path}")
+        #print(f"Saving black background clusters image to {clusters_only_path}")
         # Convert to BGR for cv2 (removing alpha channel)
         black_bg_img = np.zeros((h, w, 3), dtype=np.uint8)  # Pure black background
         # Use alpha channel for blending
