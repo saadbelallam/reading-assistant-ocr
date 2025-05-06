@@ -295,7 +295,7 @@ def annotate_image_with_heatmaps(image_path, ordered_polygons, heatmap_states,
 
 
 
-def get_ordered_polygons(polygons, image_path, annotate=False,
+def get_ordered_polygons(image_path, polygons, annotate=False,
                          final_output="final_annotated_output.jpg",
                          heatmaps_folder="heatmap_overlays"):
     """
@@ -349,5 +349,7 @@ def get_ordered_polygons(polygons, image_path, annotate=False,
             heatmaps_folder
         )
 
-    return ordered_polygons
+    order_idx = [ordered_polygons.index(p) for p in polygons]
+
+    return None, order_idx
 

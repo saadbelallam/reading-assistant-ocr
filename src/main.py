@@ -9,6 +9,7 @@ from pipeline.geometric_correction import geometric_correction
 from pipeline.blocks_detection import detect_text_blocks_stat
 from pipeline.blocks_detection import detect_text_blocks_hdbscan
 from pipeline.blocks_ordering_XY import order_blocks
+from pipeline.heatmap_ordering import get_ordered_polygons
 from pipeline.blocks_ordering_ML import reading_order_blocks
 from pipeline.lines_detection import detect_lines
 from pipeline.ocr import extract_text
@@ -98,6 +99,8 @@ def main():
             start_block_order = time.time()
             if config["blocks_ordering"].get("startegy", "ML") == "ML":
                 ordered_blocks, order = reading_order_blocks(image_path, blocks, result_path)
+            elif config["blocks_ordering"].get("startegy", "ML") == "HM":
+                ordered_blocks, order = get_ordered_polygons(image_path, blocks, result_path)
             else:
                 ordered_blocks, order = order_blocks(image_path, blocks, result_path)
             timing_report["Block Ordering"] = time.time() - start_block_order
