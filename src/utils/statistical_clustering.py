@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import os
-
+import cv2
 # ---------------------------------------------------------------------------
 # 1. Utils communs 
 # ---------------------------------------------------------------------------
@@ -254,19 +254,19 @@ def hybrid_blocks_detection(quads, visualize, prox_thr=1.0, overlap_thr=0.75, im
 
             #visualistation
     if visualize and img_path:
-        img = mpimg.imread(img_path)
-        h, w = img.shape[:2]
-        fig, ax = plt.subplots(figsize=(12, 8))
-        ax.imshow(img)
-        ax.set_xlim(0, w)
-        ax.set_ylim(h, 0)
+
+        img = cv2.imread(img_path)
+        if img is None:
+            raise FileNotFoundError(f"Image not found at {img_path}")    
+        # Dessin des rectangles
         for x, y, bw, bh in final_boxes:
-            ax.add_patch(plt.Rectangle((x, y), bw, bh, edgecolor='green', linewidth=1, linestyle='-', fill=False))
-        plt.title("Clusters statistiques")
+            pt1 = (int(x), int(y))
+            pt2 = (int(x + bw), int(y + bh))
+            cv2.rectangle(img, pt1, pt2, color=(0, 255, 0), thickness=2)  # Vert
+
         filename = "3_detected_blocks.png"
-        #print(f"Enregistrement de l'image dans test_new_cluster/{filename}")
-        plt.savefig(save_dir + "/" + filename)
-        plt.close(fig)
+        output_path = os.path.join(save_dir, filename)
+        cv2.imwrite(output_path, img)
 
     return final_boxes, line2cid
 
