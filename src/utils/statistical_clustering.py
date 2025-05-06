@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import os
-
+import cv2
 # ---------------------------------------------------------------------------
 # 1. Utils communs 
 # ---------------------------------------------------------------------------
@@ -144,6 +144,14 @@ def dyn_muls(boxes):
     a = 1.75
     return a + iqr_h / med_h, (2 - a) * iqr_w / med_w
 
+def dyn_muls_glob(boxes, a=1.75):
+    """Renvoie (vm, hm) sur tout l’ensemble"""
+    h = np.array([b[3] for b in boxes])
+    w = np.array([b[2] for b in boxes])
+    med_h, med_w = np.median(h), np.median(w)
+    iqr_h = np.percentile(h, 75) - np.percentile(h, 25)
+    iqr_w = np.percentile(w, 75) - np.percentile(w, 25)
+    return a + iqr_h/med_h, (2-a)*iqr_w/med_w
 
 def close_dyn(b1, b2, vm, hm):
     """
@@ -162,8 +170,8 @@ def close_dyn(b1, b2, vm, hm):
             and abs((x1 + w1/2) - (x2 + w2/2)) <= hm * min(w1, w2))
 
 
-def cluster_dynamic(sub_boxes):
-    vm, hm = dyn_muls(sub_boxes)
+def cluster_dynamic(sub_boxes,vm, hm):
+    # vm, hm = dyn_muls(sub_boxes)
     N = len(sub_boxes)
     seen = [False] * N
     clusters = []
@@ -222,7 +230,7 @@ def merge_inclusions(boxes, clusters, thr=0.75):
 
 def hybrid_blocks_detection(quads, visualize, prox_thr=1.0, overlap_thr=0.75, img_path=None,save_dir=None):
     boxes = quads_to_rectangles(quads)
-
+    vm_g, hm_g = dyn_muls(boxes)
     # Stage 1
     base_clusters = cluster_edge(boxes, prox_thr)
     base_boxes    = boxes_from_clusters(boxes, base_clusters)
@@ -238,7 +246,7 @@ def hybrid_blocks_detection(quads, visualize, prox_thr=1.0, overlap_thr=0.75, im
             refined_clusters.append(base_clusters[i])
         else:
             idxs = [k for cid in contained for k in base_clusters[cid]]
-            sub_clusters = cluster_dynamic([boxes[k] for k in idxs])
+            sub_clusters = cluster_dynamic([boxes[k] for k in idxs],vm_g, hm_g)
             refined_clusters.extend([[idxs[k] for k in sc] for sc in sub_clusters])
         processed.update(contained)
 
@@ -252,21 +260,21 @@ def hybrid_blocks_detection(quads, visualize, prox_thr=1.0, overlap_thr=0.75, im
         for idx in cl:
             line2cid[idx] = cid
 
-            #visualistation
+    #visualistation
     if visualize and img_path:
-        img = mpimg.imread(img_path)
-        h, w = img.shape[:2]
-        fig, ax = plt.subplots(figsize=(12, 8))
-        ax.imshow(img)
-        ax.set_xlim(0, w)
-        ax.set_ylim(h, 0)
+
+        img = cv2.imread(img_path)
+        if img is None:
+            raise FileNotFoundError(f"Image not found at {img_path}")    
+        # Dessin des rectangles
         for x, y, bw, bh in final_boxes:
-            ax.add_patch(plt.Rectangle((x, y), bw, bh, edgecolor='green', linewidth=1, linestyle='-', fill=False))
-        plt.title("Clusters statistiques")
+            pt1 = (int(x), int(y))
+            pt2 = (int(x + bw), int(y + bh))
+            cv2.rectangle(img, pt1, pt2, color=(0, 255, 0), thickness=2)  # Vert
+
         filename = "3_detected_blocks.png"
-        #print(f"Enregistrement de l'image dans test_new_cluster/{filename}")
-        plt.savefig(save_dir + "/" + filename)
-        plt.close(fig)
+        output_path = os.path.join(save_dir, filename)
+        cv2.imwrite(output_path, img)
 
     return final_boxes, line2cid
 
@@ -452,7 +460,7 @@ def hybrid_blocks_detection_2(quads, save_dir=None, prox_thr=1.0, overlap_thr=0.
         
         # Save the clusters-only image with black background
         clusters_only_path = os.path.join(save_dir, f"1_text_zones.png")
-        #print(f"Saving black background clusters image to {clusters_only_path}")
+        print(f"Saving black background clusters image to {clusters_only_path}")
         # Convert to BGR for cv2 (removing alpha channel)
         black_bg_img = np.zeros((h, w, 3), dtype=np.uint8)  # Pure black background
         # Use alpha channel for blending
