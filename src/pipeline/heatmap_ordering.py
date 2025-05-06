@@ -177,38 +177,29 @@ def heatmap_ordering(polygons, image_shape,
         # Find best candidate
         max_score = max(scores)
         if max_score < reset_threshold:
-            print(">> Reset triggered: max_score ({:.4f}) < reset_threshold ({:.4f})".format(max_score, reset_threshold))
             # On définit l'intervalle horizontal [current_x, current_x + e]
             current_x = origin[0]
-            print("Current origin x:", current_x)
             e = 0.05 * image_shape[1]  # e initial : 5% de la largeur de l'image
-            print("Initial interval e: {:.2f}".format(e))
             # On sélectionne les polygones dont le min des x (le point le plus à gauche) se trouve dans l'intervalle
             candidates = [p for p in remaining if current_x <= min(pt[0] for pt in p) <= current_x + e]
             
             # Debug : affichage des min_x de chaque polygone restant
             for p in remaining:
                 min_x_val = min(pt[0] for pt in p)
-                print("Polygon candidate: min_x = {}, centroid = {}".format(min_x_val, centroid(p)))
             
             # Tant qu'aucun candidat n'est trouvé et que l'intervalle n'atteint pas le bord droit, on augmente e
             while not candidates and (current_x + e < image_shape[1]):
-                print("Aucun candidat trouvé dans l'intervalle [{}, {}]. Augmentation de e.".format(current_x, current_x + e))
                 e += 0.05 * image_shape[1]
-                print("Nouvel intervalle: [{}, {}]".format(current_x, current_x + e))
                 candidates = [p for p in remaining if current_x <= min(pt[0] for pt in p) <= current_x + e]
                 for p in candidates:
                     min_x_val = min(pt[0] for pt in p)
-                    print("Nouveau candidat: min_x = {}, centroid = {}".format(min_x_val, centroid(p)))
             
             if candidates:
                 # Parmi les candidats, on choisit celui dont le min des y (le plus haut dans l'image) est le plus petit
                 next_poly = min(candidates, key=lambda p: min(pt[1] for pt in p))
-                print("Polygon choisi par reset: min_x = {}, centroid = {}".format(min(pt[0] for pt in next_poly), centroid(next_poly)))
             else:
                 # Fallback : parmi tous les polygones restants, celui avec le plus petit min(y)
                 next_poly = min(remaining, key=lambda p: min(pt[1] for pt in p))
-                print("Aucun candidat trouvé dans l'intervalle élargi; fallback: min_x = {}, centroid = {}".format(min(pt[0] for pt in next_poly), centroid(next_poly)))
         else:
             next_poly = remaining[np.argmax(scores)]
 
@@ -266,7 +257,6 @@ def annotate_image(image_path, ordered_polygons, output_path):
     for idx, poly in enumerate(ordered_polygons):
         draw_polygon(img, poly, color=(0,255,0), thickness=2, idx=idx+1)
     cv2.imwrite(output_path, img)
-    print(f"Final annotated image saved to: {output_path}")
 
 def annotate_image_with_heatmaps(image_path, ordered_polygons, heatmap_states,
                                  init_sigma_x, init_sigma_y, output_folder):
@@ -288,16 +278,11 @@ def annotate_image_with_heatmaps(image_path, ordered_polygons, heatmap_states,
 
         out_path = os.path.join(output_folder, f"heatmap_state_{i}.jpg")
         cv2.imwrite(out_path, overlay)
-        print(f"Saved overlay for iteration {i}: {out_path}")
 
 
-
-
-
-
-def get_ordered_polygons(image_path, polygons, annotate=False,
-                         final_output="final_annotated_output.jpg",
-                         heatmaps_folder="heatmap_overlays"):
+def get_ordered_polygons(image_path, polygons,result_path, 
+                         annotate=True,
+                         ):
     """
     Applique l'algorithme heatmap_ordering aux boxes détectées par CRAFT.
 
@@ -311,8 +296,8 @@ def get_ordered_polygons(image_path, polygons, annotate=False,
     Retourne :
         ordered_polygons : liste ordonnée des polygones.
     """
-    # Conversion en entiers
-
+    # Conversion de polygons en liste de tuples (x, y)
+    polygons = [list(map(tuple, poly)) for poly in polygons]
     # Chargement de l'image
     img = cv2.imread(image_path)
     if img is None:
@@ -339,7 +324,8 @@ def get_ordered_polygons(image_path, polygons, annotate=False,
 
     # Annotations optionnelles
     if annotate:
-        annotate_image(image_path, ordered_polygons, final_output)
+        result_path, heatmaps_folder = result_path + "/final_annotated_output.png", result_path + "/heatmap_overlays"
+        annotate_image(image_path, ordered_polygons, result_path)
         annotate_image_with_heatmaps(
             image_path,
             ordered_polygons,
