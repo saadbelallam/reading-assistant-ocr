@@ -7,7 +7,7 @@ import pytesseract
 import cv2
 import numpy as np
 from typing import List
-
+from utils.draw_utils import draw_lines
 def extract_text_from_region(preprocessed_image: np.ndarray, region: np.ndarray, masks: list, ocr_config: dict) -> str:
     """
     Process a single text line, masking unrecognized words while preserving line structure
@@ -67,8 +67,9 @@ def extract_text(image_path: str, output_dir: str, order: List, lines: List, lin
         lines_ = [lines[i] for i in lines_indices]
         sorted_lines = sorted(lines_, key=lambda box: box[:, 1].mean())
         ordered_lines+=sorted_lines
-    print(len(ordered_lines))
-
+        
+    # Draw lines for visualization
+    draw_lines(image_path, ordered_lines,order, output_dir)
     # Batch processing to reduce per-call overhead
     full_text = []
     for region in ordered_lines:
