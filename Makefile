@@ -42,8 +42,8 @@ evaluate:
 
 # Evaluate all images in tests/images
 evaluate-all:
-	@echo "\n Evaluating all results in $(RESULT_DIR):"
-	@python3 src/utils/metrics_evaluation_folder.py $(RESULT_DIR)
+	@echo "\nEvaluating all results in $(IMAGE_DIR):"
+	@python3 src/utils/metrics_evaluation_folder.py $(IMAGE_DIR)
 
 MAKEFLAGS += --no-print-directory
 
