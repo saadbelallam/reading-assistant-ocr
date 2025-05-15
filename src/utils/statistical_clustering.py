@@ -121,7 +121,7 @@ on applique ce raffinage (voir étape2) à l'intérieur de chaque gros cluster i
 # 4. Stage 2 – dynamic thresholds
 # ---------------------------------------------------------------------------
 
-def dyn_muls(boxes):
+def dyn_muls(boxes, a=1.75, hm_min=0.05, vm_min=0.5):
     """
     Calcule deux multiplicateurs adaptatifs (vm, hm)
 
@@ -138,11 +138,13 @@ def dyn_muls(boxes):
     """
     h = np.array([b[3] for b in boxes])
     w = np.array([b[2] for b in boxes])
-    med_h, med_w = np.median(h), np.median(w)
-    iqr_h = np.subtract(*np.percentile(h, [75, 25]))
-    iqr_w = np.subtract(*np.percentile(w, [75, 25]))
-    a = 1.75
-    return a + iqr_h / med_h, (2 - a) * iqr_w / med_w
+    vm = a + (np.percentile(h,75) - np.percentile(h,25)) / np.median(h)
+    hm = (2 - a) * (np.percentile(w,75) - np.percentile(w,25)) / np.median(w)
+
+    # anti-dégénérescence
+    vm = max(vm, vm_min)
+    hm = max(hm, hm_min)
+    return vm, hm
 
 
 def close_dyn(b1, b2, vm, hm):

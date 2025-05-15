@@ -25,7 +25,7 @@ def cluster_bounding_boxes_hdbscan(
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
-        metric='cityblock'
+        metric='euclidean'
     )
     labels = clusterer.fit_predict(centers)
     probabilities = clusterer.probabilities_
