@@ -4,6 +4,8 @@ import os
 import time
 import shutil
 import json
+import psutil
+import csv
 
 from pipeline.geometric_correction import geometric_correction
 from pipeline.blocks_detection import detect_text_blocks_stat
@@ -128,7 +130,21 @@ def main():
     # Timing report printing
     total_time = time.time() - start_time
     timing_report["Total Processing Time"] = total_time
-    
+    # RAM
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info().rss / (1024 * 1024) 
+
+    # ✅ Save total time and RAM usage to a CSV file
+    csv_path = os.path.join(output_base, "time_ram.csv")
+    file_exists = os.path.isfile(csv_path)
+
+    with open(csv_path, mode="a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        if not file_exists:
+            writer.writerow(["Image", "Total Time (s)", "RAM (MB)"])
+        image_name = os.path.basename(image_path)
+        writer.writerow([image_name, f"{total_time:.2f}", f"{mem_info:.2f}"])
+
     if show_timing:
         timing_out(timing_report)
 
