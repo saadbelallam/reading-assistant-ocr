@@ -27,4 +27,6 @@ dependencies = [
   "mmcv-full==1.7.1",
   "Pillow==9.4.0",
   "Levenshtein",
+  "psutil",
+  "csv"
 ]
