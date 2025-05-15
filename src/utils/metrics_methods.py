@@ -57,7 +57,7 @@ class MetricsComputation:
         # On applique la formule pour trouver le char_accuracy
         distance = self.measures.levenshetein_distance 
         N = len(original_input)
-        self.measures.character_accuracy = (1 - distance / N) * 100
+        self.measures.character_accuracy = max(0, (1 - distance / N) * 100)
 
     def compute_char_SDI(self, ocr_output, original_input):
         substitutions, deletions, insertions = 0, 0, 0
@@ -87,8 +87,9 @@ class MetricsComputation:
         print(self.measures)
 
     def compute_TP_FN_FP(self, ocr_output, original_input):
-        output_split = ocr_output.split(" ")
-        input_split = original_input.split(" ")
+        output_split = ocr_output.split()
+        input_split = original_input.split()
+
 
         output_counter = Counter(output_split) # par exemple {hello : 1, world : 1}
         input_counter = Counter(input_split) # meme chose mais avec l'input
