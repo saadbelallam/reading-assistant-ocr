@@ -94,6 +94,7 @@ def main():
         # si blocks_ordering est désactivé 
         if not config["blocks_detection"].get("enabled", False):
             blocks = lines
+            order = []
         # 4. Blocks ordering
         if config["blocks_ordering"].get("enabled", False):
             start_block_order = time.time()

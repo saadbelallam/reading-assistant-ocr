@@ -60,21 +60,30 @@ def extract_text(image_path: str, output_dir: str, order: List, lines: List, lin
     if image is None:
         raise FileNotFoundError(f"Image not found at {image_path}")
 
-    ordered_lines = []
-    for i in range(len(order)):
-        idx = order[i]
-        lines_indices = lines_corr[idx]
-        lines_ = [lines[i] for i in lines_indices]
-        sorted_lines = sorted(lines_, key=lambda box: box[:, 1].mean())
-        ordered_lines+=sorted_lines
-        
-    # Draw lines for visualization
-    draw_lines(image_path, ordered_lines,order, output_dir)
-    # Batch processing to reduce per-call overhead
-    full_text = []
-    for region in ordered_lines:
-        text = extract_text_from_region(image, region, masks, ocr_config)
-        full_text.append(text)
+    if order:
+        ordered_lines = []
+        for i in range(len(order)):
+            idx = order[i]
+            lines_indices = lines_corr[idx]
+            lines_ = [lines[i] for i in lines_indices]
+            sorted_lines = sorted(lines_, key=lambda box: box[:, 1].mean())
+            ordered_lines+=sorted_lines
+
+        # Draw lines for visualization
+        draw_lines(image_path, ordered_lines,order, output_dir)
+        # Batch processing to reduce per-call overhead
+        full_text = []
+        for region in ordered_lines:
+            text = extract_text_from_region(image, region, masks, ocr_config)
+            full_text.append(text)
+    else:
+        # Draw lines for visualization
+        draw_lines(image_path,lines,order, output_dir)
+        # Batch processing to reduce per-call overhead
+        full_text = []
+        for region in lines:
+            text = extract_text_from_region(image, region, masks, ocr_config)
+            full_text.append(text)
 
     # Save results
     text_output = '\n'.join(full_text)
