@@ -4,7 +4,6 @@ import string
 
 class Measures:
     def __init__(self):
-        # les mesures ne sont pas encore calculés...
         self.levenshetein_distance = None
         self.character_accuracy = None
         self.substitutions = None
@@ -20,9 +19,7 @@ class Measures:
         self.recall = 0
         self.F1_score = 0
 
-    
     def __str__(self):
-
         return (
             "-------------- Test Results -------------- \n"
             f"Levenshtein Distance : {self.levenshetein_distance}\n"
@@ -37,45 +34,42 @@ class Measures:
             f"recall : {self.recall}\n"
             f"F1 score : {self.F1_score}"
         )
-    
-
-
 
 class MetricsComputation:
     def __init__(self):
-        self.measures = Measures() # contient toutes les données des mesures effectuées
-        
+        self.measures = Measures()
 
     def compute_levenshtein_distance(self, ocr_output, original_input):
         distance = Levenshtein.distance(ocr_output, original_input)
         self.measures.levenshetein_distance = distance
 
     def compute_char_accuracy(self, ocr_output, original_input):
-        if self.measures.levenshetein_distance is None: # pas encore calculé ? 
-            self.compute_levenshtein_distance(ocr_output, original_input) # on la calcule
+        if self.measures.levenshetein_distance is None:
+            self.compute_levenshtein_distance(ocr_output, original_input)
 
-        # On applique la formule pour trouver le char_accuracy
         distance = self.measures.levenshetein_distance 
         N = len(original_input)
-        self.measures.character_accuracy = max(0, (1 - distance / N) * 100)
+
+        # PROTECTION CONTRE LA DIVISION PAR ZÉRO
+        if N == 0:
+            self.measures.character_accuracy = 0
+        else:
+            self.measures.character_accuracy = max(0, (1 - distance / N) * 100)
 
     def compute_char_SDI(self, ocr_output, original_input):
         substitutions, deletions, insertions = 0, 0, 0
 
-        # Comptage des erreurs
         for op, _, _ in Levenshtein.editops(ocr_output, original_input):
             if op == 'replace':
-                substitutions += 1  
+                substitutions += 1
             elif op == 'insert':
-                insertions += 1  
+                insertions += 1
             elif op == 'delete':
-                deletions += 1  
+                deletions += 1
 
-        # mettre à jour les données dans measures 
         self.measures.substitutions = substitutions
         self.measures.deletions = deletions
         self.measures.insertions = insertions
-
 
     def compute_all(self, ocr_output, original_input):
         self.compute_char_accuracy(ocr_output, original_input)
@@ -90,32 +84,26 @@ class MetricsComputation:
         output_split = ocr_output.split()
         input_split = original_input.split()
 
+        output_counter = Counter(output_split)
+        input_counter = Counter(input_split)
 
-        output_counter = Counter(output_split) # par exemple {hello : 1, world : 1}
-        input_counter = Counter(input_split) # meme chose mais avec l'input
-
-        TP = 0 # Un mot bien reconnu et rédigé correctement 
-        FN = 0 # Un mot mal reconnu ou oublié	
-        FP = 0 # Un mot ajouté (ou modifié) qui n'était pas dans l'original_input
+        TP = 0
+        FN = 0
+        FP = 0
 
         for word in input_counter:
             true_positives = min(input_counter[word], output_counter[word])
             if true_positives > 0:
-
                 TP += true_positives
                 self.measures.TP_words[word] = true_positives
 
-            missing_words = input_counter[word] - output_counter[word]            
+            missing_words = input_counter[word] - output_counter[word]
             if missing_words > 0:
                 FN += missing_words
-                self.measures.FN_words[word] =  missing_words
+                self.measures.FN_words[word] = missing_words
 
-
-
-        
         for word in output_counter:
             added_words = output_counter[word] - input_counter[word]
-
             if added_words > 0:
                 FP += added_words
                 self.measures.FP_words[word] = added_words
@@ -124,11 +112,23 @@ class MetricsComputation:
         self.measures.FN = FN
         self.measures.FP = FP
 
-        precision = TP / (TP + FP)
-        recall = TP / (TP + FN)
+        # PROTECTION CONTRE LA DIVISION PAR ZÉRO POUR LA PRÉCISION
+        if TP + FP == 0:
+            precision = 0
+        else:
+            precision = TP / (TP + FP)
+
+        # PROTECTION CONTRE LA DIVISION PAR ZÉRO POUR LE RAPPEL
+        if TP + FN == 0:
+            recall = 0
+        else:
+            recall = TP / (TP + FN)
+
         self.measures.precision = precision
         self.measures.recall = recall
+
+        # PROTECTION CONTRE LA DIVISION PAR ZÉRO POUR LE F1 SCORE
         if precision + recall == 0:
             self.measures.F1_score = 0
         else:
-            self.measures.F1_score = 2 * (precision * recall) /(precision + recall)
+            self.measures.F1_score = 2 * (precision * recall) / (precision + recall)

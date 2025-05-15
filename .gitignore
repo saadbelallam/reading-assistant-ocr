@@ -29,4 +29,7 @@ models/camembert-base/
 uv.lock
 .cache/
 .mypy_cache/
-.pytest_cache/
+.pytest_cache/*.pt
+*.pkl
+*.dll
+data/processed/
